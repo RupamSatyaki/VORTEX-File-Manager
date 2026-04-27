@@ -1,7 +1,10 @@
 /* This PC Custom View */
 const ThisPCView = {
+  _isActive: false,
+  
   async render() {
     console.log('🖥️ Rendering This PC view');
+    this._isActive = true;
     
     // Get special folders
     const folders = await this._getSpecialFolders();
@@ -59,6 +62,26 @@ const ThisPCView = {
     document.getElementById('storage-fill').style.width = '0%';
   },
   
+  markInactive() {
+    this._isActive = false;
+  },
+  
+  isActive() {
+    return this._isActive;
+  },
+  
+  async refreshDrives() {
+    if (!this._isActive) return;
+    
+    console.log('🔄 Refreshing drives in This PC view...');
+    const drives = await this._getDrives();
+    this._renderDrives(drives);
+    
+    // Update item count
+    const foldersCount = document.getElementById('folders-grid').children.length;
+    document.getElementById('selection-info').textContent = `${foldersCount + drives.length} items`;
+  },
+  
   async _getSpecialFolders() {
     // Fetch all paths first
     const desktop = await IPC.invoke('fs:getSpecialPath', 'desktop');
@@ -113,14 +136,21 @@ const ThisPCView = {
     console.log('🖥️ Drives result:', result);
     if (!result.success) return [];
     
-    const drives = result.drives.map(d => ({
-      name: d.letter,
-      path: d.letter,
-      size: d.size,
-      freeSpace: d.freeSpace,
-      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="12" rx="10" ry="6"/><line x1="2" y1="12" x2="22" y2="12"/><circle cx="12" cy="12" r="2"/></svg>`,
-      color: '#f59e0b'
-    }));
+    const drives = result.drives.map(d => {
+      const isPortable = d.isPortable || d.type === 'portable';
+      return {
+        letter: d.letter,
+        path: d.letter,
+        size: d.size,
+        freeSpace: d.freeSpace,
+        type: d.type || 'drive',
+        isPortable: isPortable,
+        icon: isPortable 
+          ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`
+          : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="12" rx="10" ry="6"/><line x1="2" y1="12" x2="22" y2="12"/><circle cx="12" cy="12" r="2"/></svg>`,
+        color: isPortable ? '#ec4899' : '#f59e0b'
+      };
+    });
     
     console.log('🖥️ Mapped drives:', drives);
     return drives;
@@ -159,19 +189,27 @@ const ThisPCView = {
     grid.innerHTML = '';
     
     drives.forEach(drive => {
+      const isPortable = drive.isPortable || drive.type === 'portable';
       const usedPct = drive.size > 0 ? Math.round(((drive.size - drive.freeSpace) / drive.size) * 100) : 0;
-      const freeStr = drive.size > 0 ? FormatUtils.formatSize(drive.freeSpace) + ' free of ' + FormatUtils.formatSize(drive.size) : 'Unknown';
+      const freeStr = drive.size > 0 ? FormatUtils.formatSize(drive.freeSpace) + ' free of ' + FormatUtils.formatSize(drive.size) : (isPortable ? 'Portable Device' : 'Unknown');
       
       let barClass = 'green';
       if (usedPct >= 90) barClass = 'red';
       else if (usedPct >= 70) barClass = 'orange';
       
+      // Different icon for portable devices
+      const icon = isPortable 
+        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="12" rx="10" ry="6"/><line x1="2" y1="12" x2="22" y2="12"/><circle cx="12" cy="12" r="2"/></svg>`;
+      
+      const color = isPortable ? '#ec4899' : '#f59e0b';
+      
       const card = document.createElement('div');
       card.className = 'thispc-card';
       card.innerHTML = `
-        <div class="thispc-card-icon" style="color:${drive.color}">${drive.icon}</div>
+        <div class="thispc-card-icon" style="color:${color}">${icon}</div>
         <div class="thispc-card-info">
-          <div class="thispc-card-name">${drive.name}</div>
+          <div class="thispc-card-name">${drive.letter}</div>
           <div class="thispc-card-path">${freeStr}</div>
           ${drive.size > 0 ? `
             <div class="thispc-drive-bar">
@@ -181,10 +219,17 @@ const ThisPCView = {
         </div>
       `;
       
-      card.addEventListener('click', () => {
-        console.log('🖱️ Drive clicked:', drive.name, 'Path:', drive.path);
-        Navigation.navigateTo(drive.path);
-      });
+      // Only add click handler for non-portable drives
+      if (!isPortable) {
+        card.addEventListener('click', () => {
+          console.log('🖱️ Drive clicked:', drive.letter, 'Path:', drive.letter);
+          Navigation.navigateTo(drive.letter);
+        });
+      } else {
+        card.style.cursor = 'default';
+        card.style.opacity = '0.8';
+        card.title = 'Portable devices cannot be browsed directly';
+      }
       
       card.addEventListener('contextmenu', (e) => {
         e.preventDefault();

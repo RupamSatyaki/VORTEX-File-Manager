@@ -32,4 +32,9 @@ contextBridge.exposeInMainWorld('vortexAPI', {
 
   // Dialog
   openFolderDialog: () => ipcRenderer.invoke('dialog:openFolder'),
+  
+  // Drive monitoring
+  onDrivesChanged: (callback) => {
+    ipcRenderer.on('drives:changed', (event, data) => callback(data));
+  },
 });

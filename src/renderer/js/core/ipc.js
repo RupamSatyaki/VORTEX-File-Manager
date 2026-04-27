@@ -35,5 +35,11 @@ const IPC = {
     };
     const fn = map[channel];
     if (fn) fn(...args);
+  },
+  
+  onDrivesChanged(callback) {
+    if (window.vortexAPI && window.vortexAPI.onDrivesChanged) {
+      window.vortexAPI.onDrivesChanged(callback);
+    }
   }
 };

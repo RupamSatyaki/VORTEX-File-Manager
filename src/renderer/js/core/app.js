@@ -28,6 +28,9 @@ const App = {
     DragDrop.init();
     Shortcuts.init();
     Bookmarks.load();
+    
+    // Setup drive monitoring
+    this.setupDriveMonitoring();
 
     // Open This PC by default (special view)
     const savedTabs = Storage.get('tabs');
@@ -37,6 +40,44 @@ const App = {
       // Open with "This PC" view
       TabManager.createTab('thispc://');
     }
+  },
+  
+  setupDriveMonitoring() {
+    console.log('🔧 Setting up drive monitoring...');
+    
+    if (typeof IPC.onDrivesChanged !== 'function') {
+      console.warn('⚠️ Drive monitoring not available');
+      return;
+    }
+    
+    IPC.onDrivesChanged((data) => {
+      console.log('💿 Drives changed:', data);
+      
+      // Show notification
+      if (data.added.length > 0) {
+        const deviceName = data.added.join(', ');
+        const isPhone = deviceName.includes('📱');
+        Footer.showStatus(isPhone ? `Device connected: ${deviceName.replace('📱 ', '')}` : `Drive connected: ${deviceName}`, 'success');
+      }
+      if (data.removed.length > 0) {
+        const deviceName = data.removed.join(', ');
+        const isPhone = deviceName.includes('📱');
+        Footer.showStatus(isPhone ? `Device disconnected: ${deviceName.replace('📱 ', '')}` : `Drive disconnected: ${deviceName}`, 'info');
+      }
+      
+      // Refresh This PC view if active
+      if (ThisPCView.isActive()) {
+        console.log('🔄 Refreshing This PC view...');
+        ThisPCView.refreshDrives();
+      }
+      
+      // Refresh sidebar drives
+      if (typeof Sidebar.loadDrives === 'function') {
+        Sidebar.loadDrives();
+      }
+    });
+    
+    console.log('✅ Drive monitoring setup complete');
   },
 
   loadSettings() {

@@ -5,6 +5,8 @@ const os   = require('os');
 
 let mainWindow;
 const isDev = process.argv.includes('--dev');
+let driveMonitorInterval = null;
+let lastDriveList = [];
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -22,11 +24,18 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, 'src/renderer/index.html'));
-  mainWindow.once('ready-to-show', () => mainWindow.show());
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+    startDriveMonitoring();
+  });
   if (isDev) {
     mainWindow.webContents.openDevTools();
     setupDevReload();
   }
+  
+  mainWindow.on('closed', () => {
+    stopDriveMonitoring();
+  });
 }
 
 app.whenReady().then(() => { createWindow(); registerIpcHandlers(); });
@@ -66,14 +75,54 @@ function registerIpcHandlers() {
   // ── Drives ───────────────────────────────────────────────
   ipcMain.handle('fs:getDrives', () => new Promise(resolve => {
     if (process.platform !== 'win32') return resolve({ success: true, drives: [{ letter: os.homedir() + path.sep, freeSpace: 0, size: 0 }] });
+    
     const { exec } = require('child_process');
+    
+    // Get logical drives
     exec('wmic logicaldisk get caption,size,freespace /format:csv', { timeout: 4000 }, (err, stdout) => {
-      if (err) return resolve({ success: true, drives: [{ letter: 'C:\\', freeSpace: 0, size: 0 }] });
-      const drives = stdout.trim().split('\n')
-        .filter(l => l.trim() && !l.startsWith('Node'))
-        .map(l => { const p = l.split(','); return { letter: (p[1]||'').trim() + '\\', freeSpace: parseInt(p[2])||0, size: parseInt(p[3])||0 }; })
-        .filter(d => d.letter.length > 1);
-      resolve({ success: true, drives });
+      const drives = [];
+      
+      if (!err) {
+        const logicalDrives = stdout.trim().split('\n')
+          .filter(l => l.trim() && !l.startsWith('Node'))
+          .map(l => { 
+            const p = l.split(','); 
+            return { 
+              letter: (p[1]||'').trim() + '\\', 
+              freeSpace: parseInt(p[2])||0, 
+              size: parseInt(p[3])||0,
+              type: 'drive'
+            }; 
+          })
+          .filter(d => d.letter.length > 1);
+        drives.push(...logicalDrives);
+      }
+      
+      // Get portable devices (phones, cameras)
+      exec('wmic path Win32_PnPEntity where "PNPClass=\'WPD\' OR PNPClass=\'MTP\'" get Caption /format:csv', { timeout: 4000 }, (err2, stdout2) => {
+        if (!err2) {
+          const portableDevices = stdout2.trim().split('\n')
+            .filter(l => l.trim() && !l.startsWith('Node'))
+            .map(l => {
+              const parts = l.split(',');
+              const name = (parts[1] || '').trim();
+              if (name) {
+                return {
+                  letter: name,
+                  freeSpace: 0,
+                  size: 0,
+                  type: 'portable',
+                  isPortable: true
+                };
+              }
+              return null;
+            })
+            .filter(d => d !== null);
+          drives.push(...portableDevices);
+        }
+        
+        resolve({ success: true, drives });
+      });
     });
   }));
 
@@ -226,4 +275,98 @@ function setupDevReload() {
   });
 
   watcher.on('error', error => console.error('❌ Watcher error:', error));
+}
+
+// ── Drive Monitoring ─────────────────────────────────────
+function startDriveMonitoring() {
+  console.log('💿 Starting drive monitoring...');
+  
+  // Initial drive list
+  getDriveList().then(drives => {
+    lastDriveList = drives;
+  });
+  
+  // Check every 2 seconds (faster for better UX)
+  driveMonitorInterval = setInterval(async () => {
+    const currentDrives = await getDriveList();
+    
+    // Compare with last list
+    if (JSON.stringify(currentDrives) !== JSON.stringify(lastDriveList)) {
+      console.log('💿 Drive change detected!');
+      
+      // Find added drives
+      const added = currentDrives.filter(d => !lastDriveList.includes(d));
+      // Find removed drives
+      const removed = lastDriveList.filter(d => !currentDrives.includes(d));
+      
+      if (added.length > 0) {
+        console.log('✅ Drives added:', added);
+      }
+      if (removed.length > 0) {
+        console.log('❌ Drives removed:', removed);
+      }
+      
+      // Notify renderer
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('drives:changed', { added, removed });
+      }
+      
+      lastDriveList = currentDrives;
+    }
+  }, 2000);
+}
+
+function stopDriveMonitoring() {
+  if (driveMonitorInterval) {
+    clearInterval(driveMonitorInterval);
+    driveMonitorInterval = null;
+    console.log('💿 Drive monitoring stopped');
+  }
+}
+
+async function getDriveList() {
+  return new Promise(resolve => {
+    if (process.platform !== 'win32') {
+      return resolve([]);
+    }
+    
+    const { exec } = require('child_process');
+    
+    // Get both logical drives AND portable devices (phones, cameras, etc.)
+    const commands = [
+      // Logical drives (USB, HDD, etc.)
+      'wmic logicaldisk get caption /format:csv',
+      // Portable devices (phones via MTP)
+      'wmic path Win32_PnPEntity where "PNPClass=\'WPD\' OR PNPClass=\'MTP\'" get Caption /format:csv'
+    ];
+    
+    Promise.all(commands.map(cmd => 
+      new Promise(res => {
+        exec(cmd, { timeout: 2000 }, (err, stdout) => {
+          if (err) return res([]);
+          const items = stdout.trim().split('\n')
+            .filter(l => l.trim() && !l.startsWith('Node'))
+            .map(l => {
+              const parts = l.split(',');
+              return (parts[1] || '').trim();
+            })
+            .filter(d => d.length > 0);
+          res(items);
+        });
+      })
+    )).then(results => {
+      // Combine logical drives and portable devices
+      const drives = [...results[0]]; // Logical drives
+      const portableDevices = results[1]; // Phones, cameras, etc.
+      
+      // Add portable devices with special prefix
+      portableDevices.forEach(device => {
+        if (device && !drives.includes(device)) {
+          drives.push('📱 ' + device);
+        }
+      });
+      
+      resolve(drives);
+    });
+  });
 }

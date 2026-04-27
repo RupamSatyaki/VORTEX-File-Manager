@@ -36,6 +36,9 @@ const FileList = {
       return;
     }
     
+    // Mark This PC as inactive when navigating away
+    ThisPCView.markInactive();
+    
     const result = await IPC.invoke('fs:readDir', path);
     if (!result.success) {
       this.showEmpty();
