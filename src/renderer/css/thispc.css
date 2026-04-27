@@ -4,6 +4,8 @@
 
 .thispc-view {
   padding: 24px;
+  padding-bottom: 120px; /* Extra space at bottom for right-click */
+  padding-right: 120px;  /* Extra space at right for right-click */
   overflow-y: auto;
   height: 100%;
 }
