@@ -74,12 +74,24 @@ const ThisPCView = {
     if (!this._isActive) return;
     
     console.log('🔄 Refreshing drives in This PC view...');
+    
+    // Check if drives-grid exists
+    const drivesGrid = document.getElementById('drives-grid');
+    if (!drivesGrid) {
+      console.warn('⚠️ drives-grid not found, This PC view may not be active');
+      return;
+    }
+    
     const drives = await this._getDrives();
     this._renderDrives(drives);
     
     // Update item count
-    const foldersCount = document.getElementById('folders-grid').children.length;
-    document.getElementById('selection-info').textContent = `${foldersCount + drives.length} items`;
+    const foldersGrid = document.getElementById('folders-grid');
+    const foldersCount = foldersGrid ? foldersGrid.children.length : 0;
+    const selectionInfo = document.getElementById('selection-info');
+    if (selectionInfo) {
+      selectionInfo.textContent = `${foldersCount + drives.length} items`;
+    }
   },
   
   async _getSpecialFolders() {
@@ -140,7 +152,7 @@ const ThisPCView = {
       const isPortable = d.isPortable || d.type === 'portable';
       return {
         letter: d.letter,
-        path: d.letter,
+        path: d.path || d.letter, // Use path if available (for MTP devices)
         size: d.size,
         freeSpace: d.freeSpace,
         type: d.type || 'drive',
@@ -186,6 +198,11 @@ const ThisPCView = {
   
   _renderDrives(drives) {
     const grid = document.getElementById('drives-grid');
+    if (!grid) {
+      console.warn('⚠️ drives-grid element not found');
+      return;
+    }
+    
     grid.innerHTML = '';
     
     drives.forEach(drive => {
@@ -219,17 +236,12 @@ const ThisPCView = {
         </div>
       `;
       
-      // Only add click handler for non-portable drives
-      if (!isPortable) {
-        card.addEventListener('click', () => {
-          console.log('🖱️ Drive clicked:', drive.letter, 'Path:', drive.letter);
-          Navigation.navigateTo(drive.letter);
-        });
-      } else {
-        card.style.cursor = 'default';
-        card.style.opacity = '0.8';
-        card.title = 'Portable devices cannot be browsed directly';
-      }
+      // Click handler for both drives and portable devices
+      card.addEventListener('click', () => {
+        const pathToOpen = drive.path || drive.letter;
+        console.log('🖱️ Device clicked:', drive.letter, 'Path:', pathToOpen, 'IsPortable:', isPortable);
+        Navigation.navigateTo(pathToOpen);
+      });
       
       card.addEventListener('contextmenu', (e) => {
         e.preventDefault();

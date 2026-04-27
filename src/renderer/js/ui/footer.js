@@ -22,7 +22,17 @@ const Footer = {
     const driveInfoEl = document.getElementById('drive-info');
     const storageFill = document.getElementById('storage-fill');
 
-    // Show drive letter immediately
+    // Handle portable device paths (Computer\DeviceName\...)
+    if (currentPath.startsWith('Computer\\')) {
+      const parts = currentPath.replace('Computer\\', '').split('\\');
+      const deviceName = parts[0];
+      driveInfoEl.textContent = `📱 ${deviceName}`;
+      storageFill.style.width = '0%';
+      storageFill.className = 'storage-fill';
+      return;
+    }
+
+    // Show drive letter immediately for regular paths
     const letter = currentPath.slice(0, 3);
     driveInfoEl.textContent = letter;
 

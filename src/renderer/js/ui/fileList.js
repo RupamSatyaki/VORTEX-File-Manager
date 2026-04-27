@@ -28,7 +28,13 @@ const FileList = {
     this._isSearchMode = false;
     this._searchQuery = '';
     this._removeBanner();
-    this.showLoading();
+    
+    // Show loading with message for portable devices
+    if (path.startsWith('Computer\\')) {
+      this.showLoading('Loading device... This may take a few seconds');
+    } else {
+      this.showLoading();
+    }
     
     // Handle special "This PC" view
     if (path === 'thispc://') {
@@ -38,6 +44,12 @@ const FileList = {
     
     // Mark This PC as inactive when navigating away
     ThisPCView.markInactive();
+    
+    // Hide This PC view if it exists
+    const thisPCView = document.getElementById('thispc-view');
+    if (thisPCView) {
+      thisPCView.remove();
+    }
     
     const result = await IPC.invoke('fs:readDir', path);
     if (!result.success) {
@@ -428,11 +440,18 @@ const FileList = {
     return [...sort(dirs), ...sort(items)];
   },
 
-  showLoading() {
+  showLoading(message = 'Loading...') {
     ['file-grid','file-list','file-details','empty-state'].forEach(id => {
       document.getElementById(id).style.display = 'none';
     });
-    document.getElementById('loading-state').style.display = 'flex';
+    const loadingState = document.getElementById('loading-state');
+    loadingState.style.display = 'flex';
+    
+    // Update loading message
+    const loadingText = loadingState.querySelector('span');
+    if (loadingText) {
+      loadingText.textContent = message;
+    }
   },
 
   showEmpty() {

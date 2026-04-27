@@ -44,6 +44,52 @@ const AddressBar = {
       return;
     }
     
+    // Handle portable device paths (Computer\DeviceName\...)
+    if (path.startsWith('Computer\\')) {
+      breadcrumb.innerHTML = '';
+      
+      const parts = path.replace('Computer\\', '').split('\\');
+      
+      // Add "This PC" root
+      const rootItem = document.createElement('span');
+      rootItem.className = 'breadcrumb-item';
+      rootItem.textContent = '🖥️ This PC';
+      rootItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        Navigation.navigateTo('thispc://');
+      });
+      breadcrumb.appendChild(rootItem);
+      
+      // Add separator
+      const sep1 = document.createElement('span');
+      sep1.className = 'breadcrumb-separator';
+      sep1.textContent = '›';
+      breadcrumb.appendChild(sep1);
+      
+      // Add device name and path segments
+      parts.forEach((part, i) => {
+        const item = document.createElement('span');
+        item.className = 'breadcrumb-item';
+        item.textContent = i === 0 ? `📱 ${part}` : part;
+        
+        const segmentPath = 'Computer\\' + parts.slice(0, i + 1).join('\\');
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          Navigation.navigateTo(segmentPath);
+        });
+        breadcrumb.appendChild(item);
+        
+        if (i < parts.length - 1) {
+          const sep = document.createElement('span');
+          sep.className = 'breadcrumb-separator';
+          sep.textContent = '›';
+          breadcrumb.appendChild(sep);
+        }
+      });
+      
+      return;
+    }
+    
     const segments = PathUtils.getSegments(path);
     breadcrumb.innerHTML = '';
 

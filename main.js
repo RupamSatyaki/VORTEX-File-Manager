@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const path = require('path');
 const fs   = require('fs');
 const os   = require('os');
+const mtpHelper = require('./src/main/mtpHelper');
 
 let mainWindow;
 const isDev = process.argv.includes('--dev');
@@ -57,6 +58,13 @@ function registerIpcHandlers() {
 
   // ── Read directory ───────────────────────────────────────
   ipcMain.handle('fs:readDir', async (e, dirPath) => {
+    // Check if it's a portable device path (starts with Computer\)
+    if (dirPath.startsWith('Computer\\')) {
+      console.log('📱 Reading portable device:', dirPath);
+      return await mtpHelper.readDir(dirPath);
+    }
+    
+    // Regular file system
     try {
       const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
       const files = await Promise.all(entries.map(async entry => {
@@ -73,42 +81,50 @@ function registerIpcHandlers() {
   });
 
   // ── Drives ───────────────────────────────────────────────
-  ipcMain.handle('fs:getDrives', () => new Promise(resolve => {
-    if (process.platform !== 'win32') return resolve({ success: true, drives: [{ letter: os.homedir() + path.sep, freeSpace: 0, size: 0 }] });
+  ipcMain.handle('fs:getDrives', async () => {
+    if (process.platform !== 'win32') return { success: true, drives: [{ letter: os.homedir() + path.sep, freeSpace: 0, size: 0 }] };
     
     const { exec } = require('child_process');
+    const drives = [];
     
     // Get logical drives
-    exec('wmic logicaldisk get caption,size,freespace /format:csv', { timeout: 4000 }, (err, stdout) => {
-      const drives = [];
-      
-      if (!err) {
-        const logicalDrives = stdout.trim().split('\n')
-          .filter(l => l.trim() && !l.startsWith('Node'))
-          .map(l => { 
-            const p = l.split(','); 
-            return { 
-              letter: (p[1]||'').trim() + '\\', 
-              freeSpace: parseInt(p[2])||0, 
-              size: parseInt(p[3])||0,
-              type: 'drive'
-            }; 
-          })
-          .filter(d => d.letter.length > 1);
-        drives.push(...logicalDrives);
-      }
-      
-      // Get portable devices (phones, cameras)
-      exec('wmic path Win32_PnPEntity where "PNPClass=\'WPD\' OR PNPClass=\'MTP\'" get Caption /format:csv', { timeout: 4000 }, (err2, stdout2) => {
-        if (!err2) {
-          const portableDevices = stdout2.trim().split('\n')
+    await new Promise(resolve => {
+      exec('wmic logicaldisk get caption,size,freespace /format:csv', { timeout: 4000 }, (err, stdout) => {
+        if (!err) {
+          const logicalDrives = stdout.trim().split('\n')
+            .filter(l => l.trim() && !l.startsWith('Node'))
+            .map(l => { 
+              const p = l.split(','); 
+              return { 
+                letter: (p[1]||'').trim() + '\\', 
+                freeSpace: parseInt(p[2])||0, 
+                size: parseInt(p[3])||0,
+                type: 'drive'
+              }; 
+            })
+            .filter(d => d.letter.length > 1);
+          drives.push(...logicalDrives);
+        }
+        resolve();
+      });
+    });
+    
+    console.log('💿 Logical drives:', drives.length);
+    
+    // Get portable devices using WMIC (simpler approach)
+    await new Promise(resolve => {
+      exec('wmic path Win32_PnPEntity where "PNPClass=\'WPD\' OR PNPClass=\'MTP\'" get Caption /format:csv', { timeout: 4000 }, (err, stdout) => {
+        if (!err) {
+          const portableDevices = stdout.trim().split('\n')
             .filter(l => l.trim() && !l.startsWith('Node'))
             .map(l => {
               const parts = l.split(',');
               const name = (parts[1] || '').trim();
               if (name) {
+                // Use Computer\{device-name} as path (Windows portable device path format)
                 return {
                   letter: name,
+                  path: `Computer\\${name}`,
                   freeSpace: 0,
                   size: 0,
                   type: 'portable',
@@ -118,13 +134,18 @@ function registerIpcHandlers() {
               return null;
             })
             .filter(d => d !== null);
+          
+          console.log('📱 Portable devices found:', portableDevices.length, portableDevices);
           drives.push(...portableDevices);
         }
-        
-        resolve({ success: true, drives });
+        resolve();
       });
     });
-  }));
+    
+    console.log('💿 Total drives (logical + portable):', drives.length);
+    
+    return { success: true, drives };
+  });
 
   // ── CRUD ─────────────────────────────────────────────────
   ipcMain.handle('fs:mkdir', async (e, p) => {

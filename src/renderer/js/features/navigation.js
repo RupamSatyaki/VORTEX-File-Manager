@@ -10,9 +10,9 @@ const Navigation = {
     
     console.log('🧭 Navigation.navigateTo called with path:', path);
     
-    // Don't normalize special paths like thispc://
+    // Don't normalize special paths like thispc:// or Computer\ (portable devices)
     let normalized = path;
-    if (!path.includes('://')) {
+    if (!path.includes('://') && !path.startsWith('Computer\\')) {
       // Convert forward slashes to backslashes
       normalized = path.replace(/\//g, '\\');
       
@@ -40,6 +40,9 @@ const Navigation = {
     let label = PathUtils.getBasename(normalized) || normalized;
     if (normalized === 'thispc://') {
       label = 'This PC';
+    } else if (normalized.startsWith('Computer\\')) {
+      // Extract device name for portable devices
+      label = normalized.replace('Computer\\', '').split('\\')[0];
     }
     
     TabManager.updateActiveTab({ path: normalized, label });
