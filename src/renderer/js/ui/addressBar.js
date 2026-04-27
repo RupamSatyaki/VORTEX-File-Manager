@@ -32,6 +32,18 @@ const AddressBar = {
 
   render(path) {
     const breadcrumb = document.getElementById('breadcrumb');
+    
+    // Handle special "This PC" path
+    if (path === 'thispc://') {
+      breadcrumb.innerHTML = '';
+      const item = document.createElement('span');
+      item.className = 'breadcrumb-item';
+      item.textContent = '🖥️ This PC';
+      item.style.fontWeight = '600';
+      breadcrumb.appendChild(item);
+      return;
+    }
+    
     const segments = PathUtils.getSegments(path);
     breadcrumb.innerHTML = '';
 

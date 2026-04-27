@@ -13,7 +13,15 @@ const TabManager = {
 
   createTab(path = null, activate = true) {
     const id = 'tab_' + (++this._counter);
-    const tab = { id, path: path || '', label: path ? (PathUtils.getBasename(path) || path) : 'New Tab', history: [], historyIndex: -1 };
+    // Default to This PC if no path provided
+    const defaultPath = path || 'thispc://';
+    const tab = { 
+      id, 
+      path: defaultPath, 
+      label: defaultPath === 'thispc://' ? 'This PC' : (PathUtils.getBasename(defaultPath) || defaultPath), 
+      history: [], 
+      historyIndex: -1 
+    };
     this._tabs.push(tab);
     this._renderTab(tab);
     if (activate) this.switchTab(id);

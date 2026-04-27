@@ -1,0 +1,130 @@
+/* ============================================================
+   THIS PC VIEW — Custom Layout
+   ============================================================ */
+
+.thispc-view {
+  padding: 24px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.thispc-section {
+  margin-bottom: 32px;
+}
+
+.thispc-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.thispc-section-title svg {
+  color: var(--text-tertiary);
+}
+
+.thispc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.thispc-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--glass-item);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.thispc-card:hover {
+  background: var(--glass-item-hover);
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.thispc-card:active {
+  transform: translateY(0);
+}
+
+.thispc-card-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-item-hover);
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+}
+
+.thispc-card-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.thispc-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.thispc-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.thispc-card-path {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thispc-drive-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.thispc-drive-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 500ms ease;
+}
+
+.thispc-drive-fill.green  { background: #22c55e; }
+.thispc-drive-fill.orange { background: #f59e0b; }
+.thispc-drive-fill.red    { background: #ef4444; }
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .thispc-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .thispc-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .thispc-view {
+    padding: 16px;
+  }
+}

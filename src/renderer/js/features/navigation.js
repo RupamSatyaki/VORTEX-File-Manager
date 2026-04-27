@@ -7,7 +7,25 @@ const Navigation = {
 
   async navigateTo(path, addHistory = true) {
     if (!path) return;
-    const normalized = path.replace(/\//g, '\\').replace(/\\+$/, '') || path;
+    
+    console.log('🧭 Navigation.navigateTo called with path:', path);
+    
+    // Don't normalize special paths like thispc://
+    let normalized = path;
+    if (!path.includes('://')) {
+      // Convert forward slashes to backslashes
+      normalized = path.replace(/\//g, '\\');
+      
+      // Remove trailing backslashes EXCEPT for drive roots (e.g., C:\)
+      // Drive root pattern: single letter followed by colon and backslash
+      if (!/^[A-Za-z]:\\$/.test(normalized)) {
+        normalized = normalized.replace(/\\+$/, '');
+      }
+      
+      normalized = normalized || path;
+    }
+    
+    console.log('🧭 Normalized path:', normalized);
 
     if (addHistory) {
       this._history = this._history.slice(0, this._index + 1);
@@ -17,7 +35,14 @@ const Navigation = {
 
     this._emitNavState();
     Events.emit('navigation:pathChanged', { path: normalized });
-    TabManager.updateActiveTab({ path: normalized, label: PathUtils.getBasename(normalized) || normalized });
+    
+    // Set tab label
+    let label = PathUtils.getBasename(normalized) || normalized;
+    if (normalized === 'thispc://') {
+      label = 'This PC';
+    }
+    
+    TabManager.updateActiveTab({ path: normalized, label });
     await FileList.loadPath(normalized);
     AddressBar.render(normalized);
     Sidebar.setActivePath(normalized);

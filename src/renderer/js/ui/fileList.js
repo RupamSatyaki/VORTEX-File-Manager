@@ -12,6 +12,10 @@ const FileList = {
     this._sortBy = Storage.get('sortBy') || 'name';
     this._sortOrder = Storage.get('sortOrder') || 'asc';
     Events.on('view:changed', (v) => this.setView(v));
+    
+    // Show loading state initially
+    console.log('📋 FileList init - default view:', this._view);
+    this.showLoading();
   },
 
   setView(view) {
@@ -25,6 +29,13 @@ const FileList = {
     this._searchQuery = '';
     this._removeBanner();
     this.showLoading();
+    
+    // Handle special "This PC" view
+    if (path === 'thispc://') {
+      await this.showThisPC();
+      return;
+    }
+    
     const result = await IPC.invoke('fs:readDir', path);
     if (!result.success) {
       this.showEmpty();
@@ -35,6 +46,11 @@ const FileList = {
     this.render(this._files);
     Footer.updateSelectionInfo(0, 0);
     Footer.updateDriveInfo(path);
+  },
+
+  async showThisPC() {
+    console.log('🖥️ Showing This PC view');
+    await ThisPCView.render();
   },
 
   showSearchResults(files, query) {
@@ -268,12 +284,48 @@ const FileList = {
 
   // ── New file inline creation ───────────────────────────────
   startNewFileInline(parentPath, defaultName = 'New File.txt') {
-    // Ensure we're in a list-compatible view; fall back to refresh after creation
-    const container = document.getElementById('file-grid');
-    const isGrid = container.style.display !== 'none';
+    console.log('🎨 Creating inline file input...');
+    
+    // Find which view is active
+    const gridContainer = document.getElementById('file-grid');
+    const listContainer = document.getElementById('file-list');
+    const detailsContainer = document.getElementById('file-details');
+    const emptyState = document.getElementById('empty-state');
+    
+    let targetContainer = null;
+    let isGrid = false;
+    
+    // Check which container is visible
+    if (gridContainer.style.display !== 'none') {
+      targetContainer = gridContainer;
+      isGrid = true;
+    } else if (listContainer.style.display !== 'none') {
+      targetContainer = listContainer;
+      isGrid = false;
+    } else if (detailsContainer.style.display !== 'none') {
+      targetContainer = detailsContainer;
+      isGrid = false;
+    } else if (emptyState.style.display !== 'none') {
+      // Empty folder - show grid by default
+      console.log('📭 Empty folder detected, showing grid view');
+      emptyState.style.display = 'none';
+      gridContainer.style.display = 'grid';
+      targetContainer = gridContainer;
+      isGrid = true;
+    }
+    
+    if (!targetContainer) {
+      console.error('❌ No target container found!');
+      Footer.showStatus('Cannot create file: No container', 'error');
+      return;
+    }
+    
+    console.log('✅ Target container:', targetContainer.id, 'isGrid:', isGrid);
 
     const placeholder = document.createElement('div');
     placeholder.className = isGrid ? 'file-item-grid' : 'file-item-list';
+    placeholder.style.outline = '2px solid var(--accent)';
+    placeholder.id = 'new-file-placeholder';
 
     const iconHtml = `<div class="${isGrid ? 'file-icon-wrap' : 'file-icon-sm'}" style="color:#94a3b8">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="${isGrid ? 36 : 18}" height="${isGrid ? 36 : 18}"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -288,20 +340,17 @@ const FileList = {
     placeholder.innerHTML = iconHtml;
     placeholder.appendChild(input);
 
-    const targetContainer = isGrid
-      ? document.getElementById('file-grid')
-      : (document.getElementById('file-list').style.display !== 'none'
-          ? document.getElementById('file-list')
-          : document.getElementById('file-details'));
-
-    targetContainer.appendChild(placeholder);
+    targetContainer.insertBefore(placeholder, targetContainer.firstChild);
     placeholder.scrollIntoView({ block: 'nearest' });
-    input.focus();
-
-    // Select base name without extension
-    const dotIdx = defaultName.lastIndexOf('.');
-    if (dotIdx > 0) input.setSelectionRange(0, dotIdx);
-    else input.select();
+    
+    console.log('✅ Input field created, focusing...');
+    setTimeout(() => {
+      input.focus();
+      // Select base name without extension
+      const dotIdx = defaultName.lastIndexOf('.');
+      if (dotIdx > 0) input.setSelectionRange(0, dotIdx);
+      else input.select();
+    }, 50);
 
     let committed = false;
 
@@ -310,13 +359,33 @@ const FileList = {
       committed = true;
       const name = input.value.trim();
       placeholder.remove();
-      if (!name) return;
+      
+      if (!name) {
+        console.log('⚠️ File creation cancelled (empty name)');
+        // If folder is still empty, show empty state again
+        if (targetContainer.children.length === 0) {
+          targetContainer.style.display = 'none';
+          emptyState.style.display = 'flex';
+        }
+        return;
+      }
+      
       const filePath = PathUtils.join(parentPath, name);
+      console.log('📄 Creating file at:', filePath);
+      
       const result = await IPC.invoke('fs:createFile', filePath);
       if (result.success) {
+        console.log('✅ File created successfully');
+        Footer.showStatus(`Created file: ${name}`, 'success');
         Navigation.refresh();
       } else {
+        console.error('❌ Failed to create file:', result.error);
         Footer.showStatus('Create failed: ' + result.error, 'error');
+        // Show empty state if needed
+        if (targetContainer.children.length === 0) {
+          targetContainer.style.display = 'none';
+          emptyState.style.display = 'flex';
+        }
       }
     };
 
@@ -324,6 +393,12 @@ const FileList = {
       if (committed) return;
       committed = true;
       placeholder.remove();
+      console.log('⚠️ File creation cancelled');
+      // If folder is still empty, show empty state again
+      if (targetContainer.children.length === 0) {
+        targetContainer.style.display = 'none';
+        emptyState.style.display = 'flex';
+      }
     };
 
     input.addEventListener('keydown', (e) => {

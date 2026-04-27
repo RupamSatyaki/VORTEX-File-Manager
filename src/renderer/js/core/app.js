@@ -25,16 +25,17 @@ const App = {
     // Init features
     Navigation.init();
     Selection.init();
+    DragDrop.init();
     Shortcuts.init();
     Bookmarks.load();
 
-    // Open home
-    const homePath = await IPC.invoke('fs:getHomePath');
+    // Open This PC by default (special view)
     const savedTabs = Storage.get('tabs');
     if (savedTabs && savedTabs.length > 0) {
       await TabManager.restoreTabs(savedTabs);
     } else {
-      TabManager.createTab(homePath);
+      // Open with "This PC" view
+      TabManager.createTab('thispc://');
     }
   },
 

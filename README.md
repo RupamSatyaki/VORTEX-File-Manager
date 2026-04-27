@@ -1,6 +1,6 @@
 # 🌪️ Vortex File Manager
 
-A modern, fast, and powerful file manager built with Electron featuring glassmorphism UI design.
+A modern, fast, and powerful file manager built with Electron featuring glassmorphism UI design and drag & drop support.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
@@ -18,7 +18,8 @@ A modern, fast, and powerful file manager built with Electron featuring glassmor
 ### 📁 File Operations
 - **Create/Delete/Rename** - Full CRUD operations with inline editing
 - **Copy/Cut/Paste** - Clipboard operations with visual feedback
-- **Drag & Drop** - Move files by dragging (coming soon)
+- **Drag & Drop** - Drag files/folders to move them instantly
+- **External Drop** - Drop files from outside to copy
 - **Batch Operations** - Multi-select and bulk actions
 - **Context Menus** - Right-click menus with shortcuts
 
@@ -118,47 +119,58 @@ vortex-file-manager/
 ├── main.js                 # Electron main process
 ├── preload.js             # IPC bridge
 ├── package.json           # Dependencies & scripts
+├── .gitignore             # Git ignore rules
+├── LICENSE                # MIT License
+├── README.md              # This file
 ├── src/
 │   ├── renderer/
 │   │   ├── index.html     # Main HTML
-│   │   ├── css/           # Stylesheets (11 files)
-│   │   │   ├── themes.css
-│   │   │   ├── main.css
-│   │   │   ├── header.css
-│   │   │   ├── sidebar.css
-│   │   │   ├── file-list.css
-│   │   │   └── ...
+│   │   ├── css/           # Stylesheets (12 files)
+│   │   │   ├── themes.css         # Theme variables
+│   │   │   ├── main.css           # Global styles
+│   │   │   ├── animations.css     # Animations
+│   │   │   ├── header.css         # Toolbar styles
+│   │   │   ├── sidebar.css        # Sidebar styles
+│   │   │   ├── tabs.css           # Tab bar styles
+│   │   │   ├── address-bar.css    # Breadcrumb styles
+│   │   │   ├── file-list.css      # File views styles
+│   │   │   ├── footer.css         # Status bar styles
+│   │   │   ├── context-menu.css   # Context menu styles
+│   │   │   ├── dialogs.css        # Modal dialog styles
+│   │   │   └── drag-drop.css      # Drag & drop styles
 │   │   └── js/            # JavaScript modules
-│   │       ├── core/      # Core systems
-│   │       │   ├── app.js
-│   │       │   ├── ipc.js
-│   │       │   ├── events.js
-│   │       │   └── storage.js
-│   │       ├── ui/        # UI components
-│   │       │   ├── header.js
-│   │       │   ├── sidebar.js
-│   │       │   ├── fileList.js
-│   │       │   ├── tabs.js
-│   │       │   ├── contextMenu.js
-│   │       │   ├── dialogs.js
-│   │       │   └── ...
-│   │       ├── features/  # Features
-│   │       │   ├── navigation.js
-│   │       │   ├── selection.js
-│   │       │   ├── copyPaste.js
-│   │       │   ├── bookmarks.js
-│   │       │   └── shortcuts.js
-│   │       └── utils/     # Utilities
-│   │           ├── formatUtils.js
-│   │           ├── pathUtils.js
-│   │           └── iconMapper.js
+│   │       ├── main.js            # Entry point
+│   │       ├── core/              # Core systems (4 files)
+│   │       │   ├── app.js         # App initialization
+│   │       │   ├── ipc.js         # IPC wrapper
+│   │       │   ├── events.js      # Event bus
+│   │       │   └── storage.js     # Local storage
+│   │       ├── ui/                # UI components (10 files)
+│   │       │   ├── header.js      # Toolbar component
+│   │       │   ├── sidebar.js     # Sidebar component
+│   │       │   ├── tabs.js        # Tab manager
+│   │       │   ├── addressBar.js  # Breadcrumb navigation
+│   │       │   ├── fileList.js    # File list renderer
+│   │       │   ├── footer.js      # Status bar
+│   │       │   ├── search.js      # Search component
+│   │       │   ├── contextMenu.js # Context menus
+│   │       │   └── dialogs.js     # Modal dialogs
+│   │       ├── features/          # Features (6 files)
+│   │       │   ├── navigation.js  # Navigation system
+│   │       │   ├── selection.js   # File selection
+│   │       │   ├── copyPaste.js   # Clipboard operations
+│   │       │   ├── dragDrop.js    # Drag & drop
+│   │       │   ├── bookmarks.js   # Bookmarks manager
+│   │       │   └── shortcuts.js   # Keyboard shortcuts
+│   │       └── utils/             # Utilities (3 files)
+│   │           ├── formatUtils.js # Format helpers
+│   │           ├── pathUtils.js   # Path helpers
+│   │           └── iconMapper.js  # File icons
 │   └── assets/
 │       └── icon.png
 └── docs/
     ├── CONTEXT.txt
-    ├── FEATURES.md
-    ├── SHORTCUTS.md
-    └── ...
+    └── FOLDER_STRUCTURE.txt
 ```
 
 ## 🎨 Customization
@@ -232,8 +244,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🗺️ Roadmap
 
+- [x] Glassmorphism UI
+- [x] Multi-tab browsing
+- [x] Inline file/folder operations
+- [x] Drag & Drop support
+- [x] Recursive search
+- [x] Live disk usage
+- [x] Context menus
+- [x] Keyboard shortcuts
 - [ ] File Preview Panel (Quick Look)
-- [ ] Drag & Drop Support
 - [ ] Image Thumbnails
 - [ ] Archive Support (ZIP, RAR)
 - [ ] Recent Files List
