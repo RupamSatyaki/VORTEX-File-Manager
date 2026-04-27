@@ -1,0 +1,153 @@
+/* ============================================================
+   GLOBAL STYLES — GLASSMORPHISM
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text-primary);
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+/* App layout */
+.app-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+/* Glass overlay — the main background blur layer */
+.app-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  z-index: 0;
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+/* All direct children sit above the glass layer */
+.app-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+.main-content  { flex: 1; display: flex; overflow: hidden; }
+.content-area  { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* File list container */
+.file-list-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  background: var(--bg-content);
+}
+
+/* Buttons */
+button {
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font); font-size: 13px;
+  color: var(--text-primary);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background var(--transition), color var(--transition), opacity var(--transition);
+  outline: none;
+}
+button:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+/* Input */
+input {
+  font-family: var(--font); font-size: 13px;
+  color: var(--text-primary); outline: none; border: none;
+}
+input::placeholder { color: var(--text-tertiary); }
+
+/* Empty state */
+.empty-state {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center; color: var(--text-tertiary);
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.empty-state svg { opacity: 0.3; }
+.empty-state h3 { font-size: 15px; font-weight: 600; color: var(--text-secondary); }
+.empty-state p  { font-size: 12px; }
+
+/* Loading state */
+.loading-state {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  color: var(--text-tertiary);
+}
+.spinner {
+  width: 32px; height: 32px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Utility */
+.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hidden   { display: none !important; }
+
+/* Drag over highlight */
+.drag-over { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--accent-dim) !important; }
+
+/* Focus ring */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Inline rename input */
+.inline-rename-input {
+  background: var(--bg-input);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font);
+  padding: 2px 6px;
+  outline: none;
+  width: 100%;
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+/* Search results banner */
+.search-results-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--accent-dim);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.search-results-banner strong { color: var(--accent); }
+.search-results-banner .banner-close {
+  margin-left: auto;
+  width: 20px; height: 20px;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+}
+.search-results-banner .banner-close:hover { background: var(--border); color: var(--text-primary); }

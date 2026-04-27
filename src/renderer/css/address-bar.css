@@ -1,0 +1,75 @@
+/* ============================================================
+   ADDRESS BAR
+   ============================================================ */
+
+.address-bar-wrap {
+  height: var(--addrbar-h);
+  padding: 4px 8px;
+  background: var(--bg-content);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.address-bar {
+  flex: 1;
+  height: 28px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  gap: 0;
+  cursor: text;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  overflow: hidden;
+}
+.address-bar:hover { border-color: var(--text-tertiary); }
+.address-bar:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+/* Breadcrumb */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  overflow: hidden;
+  gap: 0;
+}
+
+.bc-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), color var(--transition);
+  flex-shrink: 0;
+}
+.bc-item:hover { background: var(--bg-item-hover); color: var(--text-primary); }
+.bc-item:last-child { color: var(--text-primary); font-weight: 500; }
+
+.bc-sep {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  flex-shrink: 0;
+  padding: 0 1px;
+}
+
+/* Path input (edit mode) */
+.path-input {
+  flex: 1;
+  background: transparent;
+  font-size: 13px;
+  color: var(--text-primary);
+  display: none;
+}

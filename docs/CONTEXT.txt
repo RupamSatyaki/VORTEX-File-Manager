@@ -1,0 +1,446 @@
+================================================================================
+VORTEX FILE MANAGER — PROJECT CONTEXT FILE
+Version: v1.0.0 | April 26, 2026
+Standalone Electron File Manager Application
+================================================================================
+
+IMPORTANT INSTRUCTIONS FOR AI:
+- Hinglish mein respond karo (Hindi + English mix)
+- Git commands manually run karne do — execute mat karo
+- Yeh ek STANDALONE app hai — Vortex Browser se alag
+- Modern, fast, aur feature-rich file manager
+- Windows-first design, cross-platform compatible
+- Production build mein app.isPackaged use karo
+
+================================================================================
+PROJECT OVERVIEW
+================================================================================
+
+Vortex File Manager ek modern, lightweight, aur powerful file manager hai
+jo Windows Explorer ka replacement ban sakta hai.
+
+Root folder: vortex-file-manager/
+Entry: vortex-file-manager/main.js
+Renderer: vortex-file-manager/src/renderer/index.html
+
+STORAGE PATHS (runtime):
+  %APPDATA%\vortex-file-manager\storage\settings.json
+  %APPDATA%\vortex-file-manager\storage\bookmarks.json
+  %APPDATA%\vortex-file-manager\storage\recent.json
+  %APPDATA%\vortex-file-manager\storage\favorites.json
+  %APPDATA%\vortex-file-manager\storage\tabs.json
+
+================================================================================
+CORE FEATURES (v1.0.0)
+================================================================================
+
+1. MULTI-TAB FILE BROWSING
+   - Multiple folders open in tabs
+   - Drag-drop tab reordering
+   - Tab persistence (restore on restart)
+   - Quick switch (Ctrl+1, Ctrl+2, etc.)
+
+2. DUAL-PANE MODE
+   - Split view (left-right)
+   - Independent navigation
+   - Quick file transfer between panes
+   - Sync scroll option
+
+3. FILE OPERATIONS
+   - Copy, Move, Delete, Rename
+   - Batch operations (multi-select)
+   - Undo/Redo support
+   - Progress tracking for large operations
+   - Conflict resolution dialog
+
+4. ADVANCED SEARCH
+   - Fuzzy file name search
+   - Content search (inside files)
+   - Filter by type, size, date
+   - Regex support
+   - Save search queries
+
+5. FILE PREVIEW
+   - Images (jpg, png, gif, webp, svg)
+   - Videos (mp4, webm, avi, mkv)
+   - Audio (mp3, wav, flac)
+   - Documents (txt, md, json, xml, csv)
+   - Code files (syntax highlighting)
+   - PDFs (built-in viewer)
+   - Quick Look (spacebar press)
+
+6. ARCHIVE SUPPORT
+   - View inside zip/rar/7z without extracting
+   - Extract archives
+   - Create archives (zip)
+   - Drag files into/out of archives
+
+7. QUICK ACCESS
+   - Bookmarks (favorite folders)
+   - Recent files/folders
+   - Pinned locations
+   - Network drives
+   - Cloud storage (OneDrive, Google Drive paths)
+
+8. CONTEXT MENU
+   - Right-click operations
+   - Custom actions
+   - Open with... (app selector)
+   - Properties dialog
+   - Share options
+
+9. KEYBOARD SHORTCUTS
+   - Vim-style navigation (optional)
+   - Custom keybindings
+   - Command palette (Ctrl+Shift+P)
+
+10. THEMES & CUSTOMIZATION
+    - Light/Dark/Auto theme
+    - Custom accent colors
+    - Icon packs
+    - Font size adjustment
+    - Layout customization
+
+================================================================================
+FILE STRUCTURE
+================================================================================
+
+vortex-file-manager/
+├── docs/
+│   ├── CONTEXT.txt                    ← This file
+│   ├── FEATURES.md                    ← Feature documentation
+│   ├── SHORTCUTS.md                   ← Keyboard shortcuts
+│   └── CHANGELOG.md                   ← Version history
+├── src/
+│   ├── assets/
+│   │   ├── icons/
+│   │   │   ├── app-icon.png
+│   │   │   ├── file-icons/            ← File type icons
+│   │   │   └── toolbar-icons/         ← UI icons
+│   │   └── sounds/
+│   │       └── notification.mp3
+│   ├── main/
+│   │   ├── fileSystem/
+│   │   │   ├── operations.js          ← Copy, move, delete
+│   │   │   ├── watcher.js             ← File system watcher
+│   │   │   ├── search.js              ← Search engine
+│   │   │   └── permissions.js         ← File permissions
+│   │   ├── archive/
+│   │   │   ├── zipHandler.js          ← Zip operations
+│   │   │   ├── rarHandler.js          ← RAR support
+│   │   │   └── index.js
+│   │   ├── preview/
+│   │   │   ├── imagePreview.js
+│   │   │   ├── videoPreview.js
+│   │   │   ├── audioPreview.js
+│   │   │   ├── documentPreview.js
+│   │   │   └── pdfPreview.js
+│   │   ├── ipc/
+│   │   │   ├── fileHandlers.js        ← File operation IPC
+│   │   │   ├── searchHandlers.js      ← Search IPC
+│   │   │   ├── previewHandlers.js     ← Preview IPC
+│   │   │   └── settingsHandlers.js    ← Settings IPC
+│   │   ├── storage.js                 ← Settings/bookmarks storage
+│   │   ├── windowManager.js           ← Window management
+│   │   └── menuManager.js             ← App menu
+│   └── renderer/
+│       ├── css/
+│       │   ├── main.css               ← Main styles
+│       │   ├── themes.css             ← Theme variables
+│       │   └── icons.css              ← Icon styles
+│       ├── js/
+│       │   ├── core/
+│       │   │   ├── app.js             ← App initialization
+│       │   │   ├── ipc.js             ← IPC communication
+│       │   │   ├── storage.js         ← Local storage wrapper
+│       │   │   └── events.js          ← Event bus
+│       │   ├── ui/
+│       │   │   ├── tabs/
+│       │   │   │   ├── tabManager.js  ← Tab system
+│       │   │   │   ├── tabRenderer.js ← Tab UI
+│       │   │   │   └── tabDrag.js     ← Drag-drop
+│       │   │   ├── panes/
+│       │   │   │   ├── paneManager.js ← Dual-pane system
+│       │   │   │   └── paneSync.js    ← Pane synchronization
+│       │   │   ├── fileList/
+│       │   │   │   ├── fileGrid.js    ← Grid view
+│       │   │   │   ├── fileList.js    ← List view
+│       │   │   │   ├── fileIcons.js   ← Icon rendering
+│       │   │   │   └── fileSort.js    ← Sorting logic
+│       │   │   ├── toolbar/
+│       │   │   │   ├── addressBar.js  ← Path navigation
+│       │   │   │   ├── searchBar.js   ← Search UI
+│       │   │   │   └── toolbarButtons.js
+│       │   │   ├── sidebar/
+│       │   │   │   ├── quickAccess.js ← Bookmarks/Recent
+│       │   │   │   ├── drives.js      ← Drive list
+│       │   │   │   └── network.js     ← Network locations
+│       │   │   ├── preview/
+│       │   │   │   ├── previewPanel.js ← Preview pane
+│       │   │   │   └── quickLook.js    ← Quick Look modal
+│       │   │   ├── contextMenu/
+│       │   │   │   ├── fileMenu.js    ← File context menu
+│       │   │   │   └── folderMenu.js  ← Folder context menu
+│       │   │   └── dialogs/
+│       │   │       ├── progressDialog.js ← Operation progress
+│       │   │       ├── conflictDialog.js ← File conflicts
+│       │   │       ├── propertiesDialog.js ← File properties
+│       │   │       └── settingsDialog.js ← App settings
+│       │   ├── features/
+│       │   │   ├── search/
+│       │   │   │   ├── searchEngine.js
+│       │   │   │   ├── searchUI.js
+│       │   │   │   └── searchFilters.js
+│       │   │   ├── operations/
+│       │   │   │   ├── copyPaste.js   ← Copy/paste logic
+│       │   │   │   ├── dragDrop.js    ← Drag-drop files
+│       │   │   │   ├── undoRedo.js    ← Undo/redo stack
+│       │   │   │   └── batchOps.js    ← Batch operations
+│       │   │   ├── bookmarks/
+│       │   │   │   ├── bookmarkManager.js
+│       │   │   │   └── bookmarkUI.js
+│       │   │   ├── archive/
+│       │   │   │   ├── archiveViewer.js
+│       │   │   │   └── archiveExtractor.js
+│       │   │   └── shortcuts/
+│       │   │       ├── keyboardHandler.js
+│       │   │       └── commandPalette.js
+│       │   └── utils/
+│       │       ├── fileUtils.js        ← File helpers
+│       │       ├── pathUtils.js        ← Path helpers
+│       │       ├── formatUtils.js      ← Size/date formatting
+│       │       └── iconMapper.js       ← File type → icon
+│       └── index.html                  ← Main window
+├── .gitignore
+├── main.js                             ← Electron entry point
+├── preload.js                          ← Preload script
+├── package.json
+├── package-lock.json
+└── README.md
+
+================================================================================
+TECH STACK
+================================================================================
+
+CORE:
+- Electron 28+ (latest stable)
+- Node.js 20+ (built-in with Electron)
+- Pure JavaScript (no framework — fast & lightweight)
+
+FILE OPERATIONS:
+- Node.js fs/promises (async file operations)
+- chokidar (file system watcher)
+- fast-glob (fast file search)
+
+ARCHIVE SUPPORT:
+- adm-zip (zip operations)
+- node-7z (7z/rar support)
+
+PREVIEW:
+- PDF.js (PDF preview)
+- Prism.js (code syntax highlighting)
+- HTML5 video/audio (media preview)
+
+UI:
+- CSS Grid + Flexbox (layout)
+- CSS Variables (theming)
+- Intersection Observer (virtual scrolling for large folders)
+
+================================================================================
+KEYBOARD SHORTCUTS (DEFAULT)
+================================================================================
+
+NAVIGATION:
+  Ctrl+L          → Focus address bar
+  Ctrl+F          → Focus search
+  Backspace       → Go back
+  Alt+Up          → Go to parent folder
+  Alt+Left/Right  → Navigate history
+  Ctrl+D          → Bookmark current folder
+
+TABS:
+  Ctrl+T          → New tab
+  Ctrl+W          → Close tab
+  Ctrl+Tab        → Next tab
+  Ctrl+Shift+Tab  → Previous tab
+  Ctrl+1-9        → Switch to tab 1-9
+
+FILE OPERATIONS:
+  Ctrl+C          → Copy
+  Ctrl+X          → Cut
+  Ctrl+V          → Paste
+  Delete          → Move to recycle bin
+  Shift+Delete    → Permanent delete
+  F2              → Rename
+  Ctrl+A          → Select all
+  Ctrl+Z          → Undo
+  Ctrl+Y          → Redo
+
+VIEW:
+  Ctrl+1          → Grid view
+  Ctrl+2          → List view
+  Ctrl+3          → Details view
+  Ctrl+B          → Toggle sidebar
+  Ctrl+P          → Toggle preview pane
+  Ctrl+Shift+D    → Toggle dual-pane
+  F5              → Refresh
+  Space           → Quick Look preview
+
+SELECTION:
+  Ctrl+Click      → Add to selection
+  Shift+Click     → Range selection
+  Ctrl+Shift+A    → Deselect all
+
+OTHER:
+  Ctrl+Shift+P    → Command palette
+  Ctrl+,          → Settings
+  F11             → Fullscreen
+  Ctrl+Q          → Quit
+
+================================================================================
+SETTINGS STRUCTURE
+================================================================================
+
+settings.json:
+{
+  "theme": "dark",              // light, dark, auto
+  "accentColor": "#3b82f6",
+  "fontSize": 14,
+  "view": "grid",               // grid, list, details
+  "showHidden": false,
+  "showExtensions": true,
+  "sortBy": "name",             // name, size, date, type
+  "sortOrder": "asc",           // asc, desc
+  "dualPane": false,
+  "previewPane": true,
+  "sidebarWidth": 200,
+  "previewWidth": 300,
+  "gridIconSize": 64,
+  "listIconSize": 24,
+  "confirmDelete": true,
+  "confirmOverwrite": true,
+  "openFoldersInNewTab": false,
+  "restoreTabs": true,
+  "shortcuts": { ... }          // Custom keybindings
+}
+
+bookmarks.json:
+[
+  {
+    "id": "uuid",
+    "name": "Projects",
+    "path": "C:\\Users\\HARIPADA\\Projects",
+    "icon": "folder",
+    "order": 0
+  }
+]
+
+recent.json:
+[
+  {
+    "path": "C:\\Users\\HARIPADA\\Documents\\report.pdf",
+    "timestamp": 1714089600000,
+    "type": "file"
+  }
+]
+
+tabs.json:
+[
+  {
+    "id": "uuid",
+    "path": "C:\\Users\\HARIPADA\\Desktop",
+    "history": [...],
+    "historyIndex": 0,
+    "scrollPosition": 0
+  }
+]
+
+================================================================================
+IPC CHANNELS
+================================================================================
+
+Main → Renderer (send):
+  file:changed              ← File system watcher
+  operation:progress        ← Copy/move progress
+  operation:complete        ← Operation done
+  operation:error           ← Operation failed
+  settings:changed          ← Settings updated
+
+Renderer → Main (invoke):
+  fs:readDir                ← List directory
+  fs:stat                   ← Get file stats
+  fs:copy                   ← Copy file/folder
+  fs:move                   ← Move file/folder
+  fs:delete                 ← Delete file/folder
+  fs:rename                 ← Rename file/folder
+  fs:mkdir                  ← Create folder
+  fs:exists                 ← Check if exists
+  fs:search                 ← Search files
+  fs:getDrives              ← Get drive list
+  fs:getIcon                ← Get file icon
+  archive:list              ← List archive contents
+  archive:extract           ← Extract archive
+  archive:create            ← Create archive
+  preview:generate          ← Generate preview
+  storage:read              ← Read settings/bookmarks
+  storage:write             ← Write settings/bookmarks
+  shell:openExternal        ← Open with default app
+  shell:showInFolder        ← Show in Explorer
+  shell:moveToTrash         ← Move to recycle bin
+  dialog:showOpenDialog     ← File picker
+  dialog:showSaveDialog     ← Save dialog
+
+================================================================================
+DEVELOPMENT WORKFLOW
+================================================================================
+
+SETUP:
+  npm install
+  npm start                 ← Dev mode with hot reload
+
+BUILD:
+  npm run build             ← Build for Windows
+  npm run build:all         ← Build for all platforms
+
+PACKAGE:
+  npm run package           ← Create installer
+
+GIT WORKFLOW:
+  git add -A
+  git commit -m "vX.X.X: description"
+  git push
+
+VERSION BUMP:
+  1. package.json → "version": "X.X.X"
+  2. docs/CHANGELOG.md → Add new version entry
+  3. docs/CONTEXT.txt → Update version number
+
+================================================================================
+FUTURE FEATURES (v2.0+)
+================================================================================
+
+- Cloud storage integration (OneDrive, Google Drive, Dropbox)
+- FTP/SFTP support
+- Git integration (show git status in file list)
+- Bulk rename tool (regex patterns)
+- File comparison tool
+- Disk usage analyzer (visual tree map)
+- Terminal integration (open terminal in current folder)
+- Plugin system (custom actions)
+- Network file sharing
+- Encrypted folders (built-in encryption)
+
+================================================================================
+PERFORMANCE OPTIMIZATIONS
+================================================================================
+
+- Virtual scrolling for large folders (1000+ files)
+- Lazy loading of file icons
+- Debounced search
+- Web Workers for heavy operations (search, archive)
+- Thumbnail caching
+- Incremental file loading (load 100 at a time)
+
+================================================================================
+END OF CONTEXT
+================================================================================

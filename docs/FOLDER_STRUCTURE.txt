@@ -1,0 +1,441 @@
+================================================================================
+VORTEX FILE MANAGER — FOLDER STRUCTURE
+Clean, Modular, Component-Based Architecture
+================================================================================
+
+vortex-file-manager/
+│
+├── docs/
+│   ├── CONTEXT.txt                    ← Main project context (AI reference)
+│   └── FOLDER_STRUCTURE.txt           ← This file
+│
+├── src/
+│   ├── assets/
+│   │   ├── icons/
+│   │   │   ├── app-icon.png           ← App icon (256x256)
+│   │   │   ├── app-icon.ico           ← Windows icon
+│   │   │   └── file-types/            ← Custom file type icons (optional)
+│   │   │       ├── pdf.svg
+│   │   │       ├── image.svg
+│   │   │       └── video.svg
+│   │   └── sounds/
+│   │       └── notification.mp3       ← Notification sound
+│   │
+│   ├── main/                          ← Electron Main Process
+│   │   ├── fileSystem/
+│   │   │   ├── operations.js          ← Copy, move, delete, rename
+│   │   │   ├── watcher.js             ← File system watcher (chokidar)
+│   │   │   ├── search.js              ← Search engine (fast-glob)
+│   │   │   └── permissions.js         ← File permissions check
+│   │   │
+│   │   ├── archive/
+│   │   │   ├── zipHandler.js          ← Zip operations (adm-zip)
+│   │   │   ├── rarHandler.js          ← RAR support (node-7z)
+│   │   │   └── index.js               ← Archive manager
+│   │   │
+│   │   ├── preview/
+│   │   │   ├── imagePreview.js        ← Image thumbnail generation
+│   │   │   ├── videoPreview.js        ← Video thumbnail
+│   │   │   ├── audioPreview.js        ← Audio metadata
+│   │   │   ├── documentPreview.js     ← Text/code preview
+│   │   │   └── pdfPreview.js          ← PDF preview
+│   │   │
+│   │   ├── ipc/
+│   │   │   ├── fileHandlers.js        ← File operation IPC handlers
+│   │   │   ├── searchHandlers.js      ← Search IPC handlers
+│   │   │   ├── previewHandlers.js     ← Preview IPC handlers
+│   │   │   ├── settingsHandlers.js    ← Settings IPC handlers
+│   │   │   └── index.js               ← IPC setup
+│   │   │
+│   │   ├── storage.js                 ← Settings/bookmarks storage
+│   │   ├── windowManager.js           ← Window management
+│   │   └── menuManager.js             ← App menu
+│   │
+│   └── renderer/                      ← Electron Renderer Process
+│       ├── css/
+│       │   ├── themes.css             ← CSS variables (light/dark)
+│       │   ├── main.css               ← Global styles
+│       │   ├── header.css             ← Header/toolbar styles
+│       │   ├── sidebar.css            ← Sidebar styles
+│       │   ├── tabs.css               ← Tab bar styles
+│       │   ├── address-bar.css        ← Address bar styles
+│       │   ├── file-list.css          ← File list (grid/list/details)
+│       │   ├── footer.css             ← Footer/status bar styles
+│       │   ├── context-menu.css       ← Context menu styles
+│       │   ├── dialogs.css            ← Modal dialogs styles
+│       │   └── animations.css         ← Animations & transitions
+│       │
+│       ├── js/
+│       │   ├── core/                  ← Core functionality
+│       │   │   ├── app.js             ← App initialization
+│       │   │   ├── ipc.js             ← IPC communication wrapper
+│       │   │   ├── storage.js         ← LocalStorage wrapper
+│       │   │   └── events.js          ← Event bus (pub/sub)
+│       │   │
+│       │   ├── ui/                    ← UI Components
+│       │   │   ├── header.js          ← Header component (nav buttons)
+│       │   │   ├── sidebar.js         ← Sidebar component
+│       │   │   ├── tabs.js            ← Tab manager
+│       │   │   ├── addressBar.js      ← Address bar (breadcrumb)
+│       │   │   ├── fileList.js        ← File list renderer
+│       │   │   ├── footer.js          ← Footer/status bar
+│       │   │   ├── contextMenu.js     ← Context menu
+│       │   │   ├── search.js          ← Search bar & suggestions
+│       │   │   └── dialogs.js         ← Modal dialogs
+│       │   │
+│       │   ├── features/              ← Feature modules
+│       │   │   ├── navigation.js      ← Navigation logic (back/forward)
+│       │   │   ├── selection.js       ← File selection logic
+│       │   │   ├── dragDrop.js        ← Drag & drop
+│       │   │   ├── copyPaste.js       ← Copy/paste operations
+│       │   │   ├── undoRedo.js        ← Undo/redo stack
+│       │   │   ├── bookmarks.js       ← Bookmark manager
+│       │   │   ├── search.js          ← Search logic
+│       │   │   ├── preview.js         ← File preview
+│       │   │   ├── shortcuts.js       ← Keyboard shortcuts
+│       │   │   └── themes.js          ← Theme switcher
+│       │   │
+│       │   ├── utils/                 ← Utility functions
+│       │   │   ├── fileUtils.js       ← File helpers
+│       │   │   ├── pathUtils.js       ← Path manipulation
+│       │   │   ├── formatUtils.js     ← Size/date formatting
+│       │   │   ├── iconMapper.js      ← File type → icon mapping
+│       │   │   └── validators.js      ← Input validation
+│       │   │
+│       │   └── main.js                ← Entry point (init all modules)
+│       │
+│       └── index.html                 ← Main HTML file
+│
+├── .gitignore                         ← Git ignore file
+├── main.js                            ← Electron main entry
+├── preload.js                         ← Preload script (contextBridge)
+├── package.json                       ← Dependencies & scripts
+├── package-lock.json                  ← Lock file
+└── README.md                          ← Project readme
+
+================================================================================
+COMPONENT BREAKDOWN
+================================================================================
+
+MAIN PROCESS (Node.js)
+├── fileSystem/
+│   ├── operations.js      → fs.promises (copy, move, delete, rename, mkdir)
+│   ├── watcher.js         → chokidar (watch file changes)
+│   ├── search.js          → fast-glob (search files)
+│   └── permissions.js     → fs.access (check permissions)
+│
+├── archive/
+│   ├── zipHandler.js      → adm-zip (zip operations)
+│   ├── rarHandler.js      → node-7z (rar/7z support)
+│   └── index.js           → Unified archive API
+│
+├── preview/
+│   ├── imagePreview.js    → sharp (thumbnail generation)
+│   ├── videoPreview.js    → ffmpeg (video thumbnail)
+│   ├── audioPreview.js    → music-metadata (audio info)
+│   ├── documentPreview.js → fs.readFile (text preview)
+│   └── pdfPreview.js      → pdf-parse (PDF preview)
+│
+├── ipc/
+│   ├── fileHandlers.js    → Handle file operations
+│   ├── searchHandlers.js  → Handle search requests
+│   ├── previewHandlers.js → Handle preview requests
+│   ├── settingsHandlers.js→ Handle settings read/write
+│   └── index.js           → Register all handlers
+│
+├── storage.js             → Read/write JSON files (settings, bookmarks)
+├── windowManager.js       → Create/manage windows
+└── menuManager.js         → Create app menu
+
+RENDERER PROCESS (Browser)
+├── core/
+│   ├── app.js             → Initialize app, load settings
+│   ├── ipc.js             → Wrapper for window.vortexAPI
+│   ├── storage.js         → LocalStorage wrapper
+│   └── events.js          → Event bus (EventEmitter pattern)
+│
+├── ui/
+│   ├── header.js          → Render header, handle nav buttons
+│   ├── sidebar.js         → Render sidebar, handle clicks
+│   ├── tabs.js            → Tab creation, switching, closing
+│   ├── addressBar.js      → Breadcrumb rendering, path editing
+│   ├── fileList.js        → Render files (grid/list/details)
+│   ├── footer.js          → Update footer info
+│   ├── contextMenu.js     → Show/hide context menu
+│   ├── search.js          → Search bar, suggestions dropdown
+│   └── dialogs.js         → Modal dialogs (progress, conflict, etc.)
+│
+├── features/
+│   ├── navigation.js      → Back/forward history, navigate to path
+│   ├── selection.js       → Single/multi/range selection
+│   ├── dragDrop.js        → Drag files, drop zones
+│   ├── copyPaste.js       → Copy/cut/paste logic
+│   ├── undoRedo.js        → Undo/redo stack
+│   ├── bookmarks.js       → Add/remove/load bookmarks
+│   ├── search.js          → Search logic, filters
+│   ├── preview.js         → Show file preview
+│   ├── shortcuts.js       → Keyboard shortcut handler
+│   └── themes.js          → Switch themes, apply accent color
+│
+├── utils/
+│   ├── fileUtils.js       → getFileExtension, isImage, isVideo, etc.
+│   ├── pathUtils.js       → joinPath, getParent, normalize
+│   ├── formatUtils.js     → formatSize, formatDate
+│   ├── iconMapper.js      → getFileIcon (extension → emoji/icon)
+│   └── validators.js      → isValidPath, isValidFileName
+│
+└── main.js                → Entry point, init all modules
+
+================================================================================
+FILE RESPONSIBILITIES
+================================================================================
+
+MAIN PROCESS FILES:
+
+operations.js
+  - copyFile(src, dest)
+  - moveFile(src, dest)
+  - deleteFile(path)
+  - renameFile(oldPath, newPath)
+  - createFolder(path)
+  - getFileStats(path)
+  - readDirectory(path)
+
+watcher.js
+  - watchDirectory(path, callback)
+  - unwatchDirectory(path)
+  - emit events: 'add', 'change', 'unlink'
+
+search.js
+  - searchFiles(query, options)
+  - searchContent(query, path)
+  - filterByType(files, type)
+  - filterBySize(files, min, max)
+  - filterByDate(files, from, to)
+
+permissions.js
+  - canRead(path)
+  - canWrite(path)
+  - canExecute(path)
+  - requestElevation()
+
+zipHandler.js
+  - listZipContents(zipPath)
+  - extractZip(zipPath, destPath)
+  - createZip(files, zipPath)
+  - addToZip(zipPath, files)
+
+storage.js
+  - readSettings()
+  - writeSettings(data)
+  - readBookmarks()
+  - writeBookmarks(data)
+  - readRecent()
+  - writeRecent(data)
+
+windowManager.js
+  - createMainWindow()
+  - getMainWindow()
+  - closeWindow()
+  - minimizeWindow()
+  - maximizeWindow()
+
+menuManager.js
+  - createMenu()
+  - updateMenu()
+
+RENDERER PROCESS FILES:
+
+app.js
+  - init()
+  - loadSettings()
+  - applyTheme()
+  - setupEventListeners()
+
+ipc.js
+  - invoke(channel, ...args)
+  - send(channel, ...args)
+  - on(channel, callback)
+
+events.js
+  - on(event, callback)
+  - emit(event, data)
+  - off(event, callback)
+
+header.js
+  - render()
+  - updateNavButtons(canBack, canForward)
+  - handleBackClick()
+  - handleForwardClick()
+  - handleUpClick()
+  - handleRefreshClick()
+
+sidebar.js
+  - render()
+  - loadQuickAccess()
+  - loadDrives()
+  - loadBookmarks()
+  - handleItemClick(path)
+  - toggleSection(section)
+  - handleResize()
+
+tabs.js
+  - createTab(path)
+  - switchTab(tabId)
+  - closeTab(tabId)
+  - updateTab(tabId, data)
+  - getActiveTab()
+  - saveTabs()
+  - restoreTabs()
+
+addressBar.js
+  - render(path)
+  - renderBreadcrumb(path)
+  - handleSegmentClick(index)
+  - enableEdit()
+  - disableEdit()
+  - handlePathInput(path)
+
+fileList.js
+  - render(files, view)
+  - renderGrid(files)
+  - renderList(files)
+  - renderDetails(files)
+  - sortFiles(files, sortBy, order)
+  - handleFileClick(file)
+  - handleFileDoubleClick(file)
+  - handleFileRightClick(file, event)
+
+footer.js
+  - updateSelectionInfo(count, size)
+  - updateDriveInfo(drive, free, total)
+  - updateStatus(message)
+
+contextMenu.js
+  - show(x, y, items)
+  - hide()
+  - handleItemClick(action)
+
+search.js
+  - handleInput(query)
+  - showSuggestions(results)
+  - hideSuggestions()
+  - handleSuggestionClick(item)
+  - clearSearch()
+
+navigation.js
+  - navigateTo(path)
+  - goBack()
+  - goForward()
+  - goUp()
+  - refresh()
+  - addToHistory(path)
+
+selection.js
+  - selectFile(file)
+  - deselectFile(file)
+  - selectAll()
+  - deselectAll()
+  - getSelectedFiles()
+  - handleClick(file, event)
+  - handleRangeSelect(file)
+
+dragDrop.js
+  - handleDragStart(file, event)
+  - handleDragOver(event)
+  - handleDrop(event)
+  - handleDragEnd()
+
+copyPaste.js
+  - copy(files)
+  - cut(files)
+  - paste(destPath)
+  - getClipboard()
+
+undoRedo.js
+  - addAction(action)
+  - undo()
+  - redo()
+  - canUndo()
+  - canRedo()
+
+bookmarks.js
+  - addBookmark(path, name)
+  - removeBookmark(id)
+  - loadBookmarks()
+  - saveBookmarks()
+
+shortcuts.js
+  - registerShortcut(key, callback)
+  - handleKeyDown(event)
+  - handleKeyUp(event)
+
+themes.js
+  - setTheme(theme)
+  - setAccentColor(color)
+  - applyTheme()
+
+fileUtils.js
+  - getFileExtension(filename)
+  - isImage(filename)
+  - isVideo(filename)
+  - isAudio(filename)
+  - isDocument(filename)
+  - isArchive(filename)
+
+formatUtils.js
+  - formatSize(bytes)
+  - formatDate(timestamp)
+  - formatDuration(seconds)
+
+iconMapper.js
+  - getFileIcon(filename)
+  - getFolderIcon()
+  - getDriveIcon(type)
+
+================================================================================
+DATA FLOW
+================================================================================
+
+USER ACTION → RENDERER → IPC → MAIN → FILE SYSTEM
+                ↓                ↓
+            UPDATE UI ← IPC ← RESPONSE
+
+Example: Navigate to folder
+1. User clicks folder in file list
+2. fileList.js → handleFileDoubleClick()
+3. navigation.js → navigateTo(path)
+4. ipc.js → invoke('fs:readDir', path)
+5. main/ipc/fileHandlers.js → handle request
+6. main/fileSystem/operations.js → readDirectory(path)
+7. Return files array
+8. fileList.js → render(files)
+9. addressBar.js → render(path)
+10. footer.js → updateDriveInfo()
+
+================================================================================
+STATE MANAGEMENT
+================================================================================
+
+Global State (in main.js):
+  - currentPath: string
+  - currentView: 'grid' | 'list' | 'details'
+  - selectedFiles: Set<string>
+  - clipboard: { action: 'copy' | 'cut', files: string[] }
+  - history: { back: string[], forward: string[] }
+  - tabs: Tab[]
+  - activeTabId: string
+  - settings: Settings
+  - bookmarks: Bookmark[]
+
+Tab State:
+  - id: string
+  - path: string
+  - history: string[]
+  - historyIndex: number
+  - scrollPosition: number
+  - selectedFiles: Set<string>
+
+================================================================================
+END OF STRUCTURE
+================================================================================

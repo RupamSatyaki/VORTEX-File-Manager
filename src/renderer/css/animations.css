@@ -1,0 +1,31 @@
+/* ============================================================
+   ANIMATIONS — minimal, performant
+   ============================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in    { animation: fadeIn 200ms ease; }
+.slide-down { animation: slideDown 200ms ease; }
+
+/* File items appear */
+.file-item-grid,
+.file-item-list,
+.details-row {
+  animation: fadeIn 150ms ease;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

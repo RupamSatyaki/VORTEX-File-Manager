@@ -1,0 +1,75 @@
+/* ============================================================
+   TAB BAR
+   ============================================================ */
+
+.tab-bar {
+  height: var(--tabbar-h);
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-end;
+  padding: 0 8px;
+  gap: 2px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+.tab-bar::-webkit-scrollbar { height: 0; }
+
+.tab {
+  height: 30px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-tab);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  cursor: pointer;
+  min-width: 100px;
+  max-width: 180px;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+.tab:hover { background: var(--bg-item-hover); }
+.tab.active {
+  background: var(--bg-tab-active);
+  border-color: var(--border);
+  border-bottom-color: var(--bg-tab-active);
+  position: relative;
+  z-index: 1;
+}
+
+.tab-icon { width: 14px; height: 14px; flex-shrink: 0; color: var(--text-secondary); }
+.tab-icon svg { width: 14px; height: 14px; }
+
+.tab-label {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tab.active .tab-label { color: var(--text-primary); font-weight: 500; }
+
+.tab-close {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  color: var(--text-tertiary);
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity var(--transition), background var(--transition), color var(--transition);
+}
+.tab:hover .tab-close, .tab.active .tab-close { opacity: 1; }
+.tab-close:hover { background: var(--border); color: var(--text-primary); }
+
+.new-tab-btn {
+  width: 26px; height: 26px;
+  border-radius: var(--radius-md);
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
+.new-tab-btn:hover { background: var(--bg-item-hover); color: var(--text-primary); }

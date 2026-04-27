@@ -1,0 +1,72 @@
+{
+  "name": "vortex-file-manager",
+  "version": "1.0.0",
+  "description": "Modern, fast, and powerful file manager built with Electron",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder --win",
+    "build:all": "electron-builder -mwl",
+    "package": "electron-builder --win --publish never",
+    "dist": "electron-builder"
+  },
+  "keywords": [
+    "file-manager",
+    "electron",
+    "vortex",
+    "file-explorer",
+    "windows"
+  ],
+  "author": "Vortex Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.10",
+    "chokidar": "^3.5.3",
+    "fast-glob": "^3.3.2",
+    "node-7z": "^3.0.0"
+  },
+  "build": {
+    "appId": "com.vortex.filemanager",
+    "productName": "Vortex File Manager",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "src/assets/icons/app-icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Vortex File Manager"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "src/assets/icons/app-icon.png",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "src/assets/icons/app-icon.png",
+      "category": "Utility"
+    }
+  }
+}

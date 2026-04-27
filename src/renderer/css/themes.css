@@ -1,0 +1,130 @@
+/* ============================================================
+   VORTEX FILE MANAGER — THEME VARIABLES (GLASSMORPHISM)
+   ============================================================ */
+
+:root {
+  /* ── Glassmorphism core ── */
+  --glass-bg:           rgba(12, 12, 20, 0.72);
+  --glass-panel:        rgba(18, 18, 28, 0.65);
+  --glass-item:         rgba(255, 255, 255, 0.03);
+  --glass-item-hover:   rgba(255, 255, 255, 0.07);
+  --glass-item-sel:     rgba(59, 130, 246, 0.18);
+  --glass-border:       rgba(255, 255, 255, 0.08);
+  --glass-border-strong:rgba(255, 255, 255, 0.14);
+  --blur:               blur(40px) saturate(180%);
+  --blur-md:            blur(20px) saturate(160%);
+  --blur-sm:            blur(10px) saturate(140%);
+
+  /* ── Dark Theme (default) ── */
+  --bg-app:        transparent;
+  --bg-sidebar:    rgba(15, 15, 25, 0.60);
+  --bg-header:     rgba(15, 15, 25, 0.60);
+  --bg-footer:     rgba(15, 15, 25, 0.60);
+  --bg-content:    rgba(10, 10, 18, 0.45);
+  --bg-item:       rgba(255, 255, 255, 0.03);
+  --bg-item-hover: rgba(255, 255, 255, 0.07);
+  --bg-item-sel:   rgba(59, 130, 246, 0.18);
+  --bg-input:      rgba(255, 255, 255, 0.06);
+  --bg-dropdown:   rgba(18, 18, 30, 0.92);
+  --bg-tab:        rgba(255, 255, 255, 0.04);
+  --bg-tab-active: rgba(255, 255, 255, 0.09);
+  --bg-tooltip:    rgba(30, 30, 48, 0.95);
+  --bg-active:     rgba(20, 20, 32, 0.88);
+
+  --border:        rgba(255, 255, 255, 0.08);
+  --border-light:  rgba(255, 255, 255, 0.04);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-focus:  #3b82f6;
+
+  --text-primary:   #e8e8f0;
+  --text-secondary: #8888a0;
+  --text-tertiary:  #55556a;
+  --text-accent:    #3b82f6;
+
+  --accent:        #3b82f6;
+  --accent-dim:    rgba(59, 130, 246, 0.15);
+  --accent-hover:  #2563eb;
+  --accent-light:  rgba(59, 130, 246, 0.12);
+
+  --success:       #22c55e;
+  --warning:       #f59e0b;
+  --error:         #ef4444;
+
+  --shadow-sm:  0 1px 8px rgba(0, 0, 0, 0.5);
+  --shadow-md:  0 4px 20px rgba(0, 0, 0, 0.6);
+  --shadow-lg:  0 8px 40px rgba(0, 0, 0, 0.7);
+  --shadow-xl:  0 16px 60px rgba(0, 0, 0, 0.8);
+
+  --radius-sm:  4px;
+  --radius-md:  6px;
+  --radius-lg:  10px;
+  --radius-xl:  14px;
+  --radius-full: 9999px;
+
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Consolas', 'Cascadia Code', monospace;
+
+  --header-h:  48px;
+  --tabbar-h:  36px;
+  --addrbar-h: 36px;
+  --footer-h:  28px;
+  --sidebar-w: 220px;
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+
+  --transition: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-fast: 100ms ease;
+}
+
+/* ── Light Theme ── */
+[data-theme="light"] {
+  --glass-bg:           rgba(240, 240, 248, 0.72);
+  --glass-panel:        rgba(255, 255, 255, 0.55);
+  --glass-item:         rgba(0, 0, 0, 0.02);
+  --glass-item-hover:   rgba(0, 0, 0, 0.05);
+  --glass-item-sel:     rgba(59, 130, 246, 0.12);
+  --glass-border:       rgba(0, 0, 0, 0.08);
+  --glass-border-strong:rgba(0, 0, 0, 0.14);
+
+  --bg-app:        transparent;
+  --bg-sidebar:    rgba(255, 255, 255, 0.55);
+  --bg-header:     rgba(255, 255, 255, 0.55);
+  --bg-footer:     rgba(255, 255, 255, 0.55);
+  --bg-content:    rgba(240, 240, 248, 0.40);
+  --bg-item:       rgba(0, 0, 0, 0.02);
+  --bg-item-hover: rgba(0, 0, 0, 0.05);
+  --bg-item-sel:   rgba(59, 130, 246, 0.12);
+  --bg-input:      rgba(255, 255, 255, 0.70);
+  --bg-dropdown:   rgba(250, 250, 255, 0.96);
+  --bg-tab:        rgba(0, 0, 0, 0.04);
+  --bg-tab-active: rgba(255, 255, 255, 0.80);
+  --bg-tooltip:    rgba(30, 30, 48, 0.95);
+  --bg-active:     rgba(255, 255, 255, 0.90);
+
+  --border:        rgba(0, 0, 0, 0.08);
+  --border-light:  rgba(0, 0, 0, 0.04);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --border-focus:  #3b82f6;
+
+  --text-primary:   #1a1a2e;
+  --text-secondary: #555570;
+  --text-tertiary:  #9999b0;
+
+  --shadow-sm:  0 1px 8px rgba(0, 0, 0, 0.10);
+  --shadow-md:  0 4px 20px rgba(0, 0, 0, 0.12);
+  --shadow-lg:  0 8px 40px rgba(0, 0, 0, 0.15);
+  --shadow-xl:  0 16px 60px rgba(0, 0, 0, 0.18);
+}
+
+/* ── Accent presets ── */
+[data-accent="blue"]   { --accent: #3b82f6; --accent-hover: #2563eb; --accent-dim: rgba(59,130,246,0.15); --accent-light: rgba(59,130,246,0.12); }
+[data-accent="purple"] { --accent: #8b5cf6; --accent-hover: #7c3aed; --accent-dim: rgba(139,92,246,0.15); --accent-light: rgba(139,92,246,0.12); }
+[data-accent="pink"]   { --accent: #ec4899; --accent-hover: #db2777; --accent-dim: rgba(236,72,153,0.15); --accent-light: rgba(236,72,153,0.12); }
+[data-accent="green"]  { --accent: #22c55e; --accent-hover: #16a34a; --accent-dim: rgba(34,197,94,0.15);  --accent-light: rgba(34,197,94,0.12); }
+[data-accent="orange"] { --accent: #f97316; --accent-hover: #ea580c; --accent-dim: rgba(249,115,22,0.15); --accent-light: rgba(249,115,22,0.12); }
+[data-accent="teal"]   { --accent: #14b8a6; --accent-hover: #0d9488; --accent-dim: rgba(20,184,166,0.15); --accent-light: rgba(20,184,166,0.12); }
