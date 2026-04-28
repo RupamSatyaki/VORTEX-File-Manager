@@ -16,6 +16,32 @@ const FileList = {
     // Show loading state initially
     console.log('📋 FileList init - default view:', this._view);
     this.showLoading();
+    
+    // Click on empty space to deselect
+    this._setupDeselectOnClick();
+  },
+
+  _setupDeselectOnClick() {
+    const container = document.getElementById('file-list-container');
+    if (!container) return;
+
+    container.addEventListener('click', (e) => {
+      // Check if click is directly on container or empty/loading state
+      const isEmptyArea = e.target === container || 
+                         e.target.closest('.empty-state') ||
+                         e.target.closest('.loading-state') ||
+                         e.target.id === 'file-grid' ||
+                         e.target.id === 'file-list' ||
+                         e.target.id === 'file-details';
+      
+      // Also check if click is on This PC view
+      const isThisPCView = e.target.closest('#thispc-view');
+      
+      if (isEmptyArea || isThisPCView) {
+        // Deselect all if clicking on empty space
+        Selection.deselectAll();
+      }
+    });
   },
 
   setView(view) {
