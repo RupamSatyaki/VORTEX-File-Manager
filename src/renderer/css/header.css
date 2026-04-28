@@ -11,7 +11,7 @@
   box-shadow: 0 1px 0 var(--border-strong), var(--shadow-sm);
   display: flex;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 0 0 10px;
   gap: 6px;
   flex-shrink: 0;
   -webkit-app-region: drag;
@@ -23,30 +23,87 @@
 .header .search-container,
 .header .view-buttons,
 .header .nav-buttons,
-.header .window-controls {
+.header .window-controls,
+.header .app-branding {
   -webkit-app-region: no-drag;
 }
 
-/* Window controls (macOS-style) */
-.window-controls {
+/* App Branding */
+.app-branding {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition);
   margin-right: 4px;
 }
 
+.app-branding:hover {
+  background: var(--bg-item-hover);
+}
+
+.app-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  animation: iconPulse 3s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.app-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+/* Window controls (Windows-style) */
+.window-controls {
+  display: flex;
+  margin-left: auto;
+  height: 100%;
+}
+
 .wc-btn {
-  width: 12px; height: 12px;
-  border-radius: 50%;
+  width: 46px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
+  background: transparent;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: filter var(--transition), transform var(--transition);
+  transition: background var(--transition), color var(--transition);
   position: relative;
 }
-.wc-btn.close  { background: #ff5f57; }
-.wc-btn.min    { background: #febc2e; }
-.wc-btn.max    { background: #28c840; }
-.wc-btn:hover  { filter: brightness(1.15); transform: scale(1.1); }
-.wc-btn:active { filter: brightness(0.9); transform: scale(0.95); }
+
+.wc-btn:hover {
+  background: var(--bg-item-hover);
+  color: var(--text-primary);
+}
+
+.wc-btn.close:hover {
+  background: #e81123;
+  color: white;
+}
+
+.wc-btn:active {
+  background: var(--border);
+}
+
+.wc-btn.close:active {
+  background: #c50f1f;
+}
 
 /* Nav buttons */
 .nav-buttons { display: flex; gap: 2px; }
