@@ -28,7 +28,8 @@ const App = {
     DragDrop.init();
     Shortcuts.init();
     Bookmarks.load();
-    Preview.init();
+    ImagePreview.init();
+    PreviewIntegration.init();
     
     // Setup drive monitoring
     this.setupDriveMonitoring();

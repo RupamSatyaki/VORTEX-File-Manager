@@ -60,6 +60,20 @@ const Shortcuts = {
         const tab = TabManager.getActiveTab();
         if (tab && tab.path) ContextMenu._newFile(tab.path);
       }
+
+      // Image Preview with Space key
+      if (e.key === ' ' || e.key === 'Spacebar') {
+        const selected = Selection.getSelected();
+        if (selected.length === 1) {
+          const file = selected[0];
+          const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+          if (!file.isDirectory && imageExts.includes(file.ext?.toLowerCase())) {
+            e.preventDefault();
+            const files = FileList.getFiles();
+            ImagePreview.open(file, files);
+          }
+        }
+      }
     });
   }
 };

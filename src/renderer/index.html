@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="css/dialogs.css">
   <link rel="stylesheet" href="css/drag-drop.css">
   <link rel="stylesheet" href="css/thispc.css">
-  <link rel="stylesheet" href="css/preview.css">
+  <link rel="stylesheet" href="css/preview/image-preview.css">
 </head>
 <body>
 
@@ -202,24 +202,28 @@
         </div>
       </div>
 
-      <!-- File List -->
-      <div class="file-list-container" id="file-list-container">
+      <!-- File List & Preview Wrapper -->
+      <div class="file-preview-wrapper" id="file-preview-wrapper">
+        <!-- File List -->
+        <div class="file-list-container" id="file-list-container">
 
-        <div class="file-grid"         id="file-grid"    style="display:none"></div>
-        <div class="file-list"         id="file-list"    style="display:none"></div>
-        <div class="file-details-wrap" id="file-details" style="display:none"></div>
+          <div class="file-grid"         id="file-grid"    style="display:none"></div>
+          <div class="file-list"         id="file-list"    style="display:none"></div>
+          <div class="file-details-wrap" id="file-details" style="display:none"></div>
 
-        <div class="loading-state" id="loading-state" style="display:none">
-          <div class="spinner"></div>
-          <span>Loading...</span>
+          <div class="loading-state" id="loading-state" style="display:none">
+            <div class="spinner"></div>
+            <span>Loading...</span>
+          </div>
+
+          <div class="empty-state" id="empty-state" style="display:none">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <h3>This folder is empty</h3>
+            <p>Right-click here to create new items</p>
+          </div>
+
         </div>
-
-        <div class="empty-state" id="empty-state" style="display:none">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          <h3>This folder is empty</h3>
-          <p>Right-click here to create new items</p>
-        </div>
-
+        <!-- Preview panel will be inserted here by JS -->
       </div>
 
     </div><!-- /content-area -->
@@ -259,7 +263,13 @@
 <script src="js/features/bookmarks.js"></script>
 <script src="js/features/shortcuts.js"></script>
 <script src="js/features/thumbnails.js"></script>
-<script src="js/features/preview.js"></script>
+<!-- Image Preview System -->
+<script src="js/preview/components/toolbar.js"></script>
+<script src="js/preview/components/viewer.js"></script>
+<script src="js/preview/components/sidebar.js"></script>
+<script src="js/preview/components/actions.js"></script>
+<script src="js/preview/index.js"></script>
+<script src="js/preview/integration.js"></script>
 <script src="js/ui/footer.js"></script>
 <script src="js/ui/search.js"></script>
 <script src="js/ui/thisPCView.js"></script>
