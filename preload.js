@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('vortexAPI', {
   search: (dirPath, query) => ipcRenderer.invoke('fs:search', dirPath, query),
   getHomePath: () => ipcRenderer.invoke('fs:getHomePath'),
   getSpecialPath: (name) => ipcRenderer.invoke('fs:getSpecialPath', name),
+  readFile: (path) => ipcRenderer.invoke('fs:readFile', path),
 
   // Shell
   openPath: (path) => ipcRenderer.invoke('shell:openPath', path),

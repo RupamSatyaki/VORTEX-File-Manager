@@ -15,6 +15,7 @@ const IPC = {
       'fs:stat':          (p)         => window.vortexAPI.stat(p),
       'fs:search':        (dir, q)    => window.vortexAPI.search(dir, q),
       'fs:getSpecialPath':(n)         => window.vortexAPI.getSpecialPath(n),
+      'fs:readFile':      (p)         => window.vortexAPI.readFile(p),
       'shell:openPath':   (p)         => window.vortexAPI.openPath(p),
       'storage:read':     (k)         => window.vortexAPI.storageRead(k),
       'storage:write':    (k, d)      => window.vortexAPI.storageWrite(k, d),

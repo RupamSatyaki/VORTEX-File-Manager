@@ -134,10 +134,50 @@ const FileList = {
       const el = document.createElement('div');
       el.className = 'file-item-grid';
       el.dataset.path = file.path;
-      el.innerHTML = `
-        <div class="file-icon-wrap" style="color:${IconMapper.getColor(file)}">${IconMapper.getSvg(file)}</div>
-        <span class="file-name-grid">${this._esc(file.name)}</span>
-      `;
+      
+      // Check if we should show thumbnail
+      if (Thumbnails.shouldShowThumbnail(file)) {
+        if (Thumbnails.isImage(file)) {
+          // Image thumbnail
+          const thumbnailUrl = Thumbnails.getImageThumbnail(file);
+          el.innerHTML = `
+            <div class="file-icon-wrap">
+              <img class="file-thumbnail" src="${thumbnailUrl}" alt="${this._esc(file.name)}" loading="lazy">
+            </div>
+            <span class="file-name-grid">${this._esc(file.name)}</span>
+          `;
+        } else if (Thumbnails.isVideo(file)) {
+          // Video thumbnail (async) - show icon first
+          el.innerHTML = `
+            <div class="file-icon-wrap" style="color:${IconMapper.getColor(file)}">${IconMapper.getSvg(file)}</div>
+            <span class="file-name-grid">${this._esc(file.name)}</span>
+          `;
+          
+          // Load video thumbnail asynchronously
+          Thumbnails.getVideoThumbnail(file).then(thumbnailUrl => {
+            if (thumbnailUrl) {
+              const iconWrap = el.querySelector('.file-icon-wrap');
+              if (iconWrap) {
+                iconWrap.innerHTML = `
+                  <img class="file-thumbnail" src="${thumbnailUrl}" alt="${this._esc(file.name)}">
+                  <div class="video-play-icon">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none">
+                      <polygon points="8,6 18,12 8,18" fill="white"/>
+                    </svg>
+                  </div>
+                `;
+              }
+            }
+          });
+        }
+      } else {
+        // Regular icon
+        el.innerHTML = `
+          <div class="file-icon-wrap" style="color:${IconMapper.getColor(file)}">${IconMapper.getSvg(file)}</div>
+          <span class="file-name-grid">${this._esc(file.name)}</span>
+        `;
+      }
+      
       this._attachEvents(el, file);
       frag.appendChild(el);
     });

@@ -197,6 +197,14 @@ function registerIpcHandlers() {
       return { success: true, size: stat.size, modified: stat.mtime.getTime(), created: stat.birthtime.getTime(), isDirectory: stat.isDirectory(), mode: stat.mode };
     } catch (err) { return { success: false, error: err.message }; }
   });
+  
+  // ── Read File ────────────────────────────────────────────
+  ipcMain.handle('fs:readFile', async (e, filePath) => {
+    try {
+      const content = await fs.promises.readFile(filePath, 'utf8');
+      return { success: true, content };
+    } catch (err) { return { success: false, error: err.message }; }
+  });
 
   // ── Search ───────────────────────────────────────────────
   ipcMain.handle('fs:search', async (e, dirPath, query) => {
