@@ -18,6 +18,16 @@ const Sidebar = {
       });
     });
 
+    // Subsection headers (expand/collapse)
+    document.querySelectorAll('.sidebar-subsection-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const content = header.nextElementSibling;
+        if (!content) return;
+        const isCollapsed = content.classList.toggle('collapsed');
+        header.classList.toggle('collapsed', isCollapsed);
+      });
+    });
+
     // Quick access items
     document.querySelectorAll('.sidebar-item[data-special]').forEach(item => {
       item.addEventListener('click', async () => {
@@ -53,6 +63,14 @@ const Sidebar = {
     this._collapsed = force !== undefined ? force : !this._collapsed;
     sidebar.classList.toggle('collapsed', this._collapsed);
     Storage.set('sidebarCollapsed', this._collapsed);
+    
+    // Update toggle button icon
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    if (toggleBtn) {
+      toggleBtn.innerHTML = this._collapsed 
+        ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>`
+        : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`;
+    }
   },
 
   setActive(el) {
@@ -67,52 +85,71 @@ const Sidebar = {
   },
 
   async loadDrives() {
-    const container = document.getElementById('drives-content');
+    const drivesContainer = document.getElementById('drives-content');
+    const portableContainer = document.getElementById('portable-content');
     const result = await IPC.invoke('fs:getDrives');
     if (!result.success || !result.drives.length) return;
 
-    const driveSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"/><line x1="2" y1="12" x2="22" y2="12"/><circle cx="12" cy="12" r="2"/></svg>`;
+    // Separate logical drives and portable devices
+    const logicalDrives = result.drives.filter(d => !d.isPortable);
+    const portableDevices = result.drives.filter(d => d.isPortable);
 
-    container.innerHTML = '';
-    result.drives.forEach(drive => {
-      const usedPct = drive.size > 0 ? Math.round(((drive.size - drive.freeSpace) / drive.size) * 100) : 0;
-      const freeStr = drive.size > 0
-        ? FormatUtils.formatSize(drive.freeSpace) + ' free of ' + FormatUtils.formatSize(drive.size)
-        : '';
-
-      // Color coding
-      let barClass = 'green';
-      if (usedPct >= 90) barClass = 'red';
-      else if (usedPct >= 70) barClass = 'orange';
-
-      const item = document.createElement('div');
-      item.className = 'sidebar-item';
-      item.dataset.fullPath = drive.letter;
-      item.innerHTML = `
-        <span class="sidebar-item-icon" style="color:#f59e0b">${driveSvg}</span>
-        <span class="sidebar-item-label">${drive.letter}</span>
-      `;
-      item.addEventListener('click', () => {
-        Navigation.navigateTo(drive.letter);
-        this.setActive(item);
-      });
-      container.appendChild(item);
-
-      if (drive.size > 0) {
-        const bar = document.createElement('div');
-        bar.className = 'drive-bar-wrap';
-        bar.innerHTML = `
-          <div class="drive-bar-row">
-            <div class="drive-bar">
-              <div class="drive-bar-fill ${barClass}" style="width:${usedPct}%"></div>
-            </div>
-            <span style="font-size:10px;color:var(--text-tertiary)">${usedPct}%</span>
-          </div>
-          <span class="drive-bar-text">${freeStr}</span>
-        `;
-        container.appendChild(bar);
-      }
+    // Render Logical Drives
+    drivesContainer.innerHTML = '';
+    logicalDrives.forEach(drive => {
+      this._renderDrive(drive, drivesContainer, true);
     });
+
+    // Render Portable Devices
+    portableContainer.innerHTML = '';
+    portableDevices.forEach(device => {
+      this._renderDrive(device, portableContainer, true);
+    });
+  },
+
+  _renderDrive(drive, container) {
+    const isPortable = drive.isPortable;
+    const driveSvg = isPortable
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"/><line x1="2" y1="12" x2="22" y2="12"/><circle cx="12" cy="12" r="2"/></svg>`;
+
+    const usedPct = drive.size > 0 ? Math.round(((drive.size - drive.freeSpace) / drive.size) * 100) : 0;
+    const freeStr = drive.size > 0
+      ? FormatUtils.formatSize(drive.freeSpace) + ' free'
+      : '';
+
+    // Color coding
+    let barClass = 'green';
+    if (usedPct >= 90) barClass = 'red';
+    else if (usedPct >= 70) barClass = 'orange';
+
+    const item = document.createElement('div');
+    item.className = 'sidebar-item nested';
+    item.dataset.fullPath = drive.path || drive.letter;
+    item.innerHTML = `
+      <span class="sidebar-item-icon" style="color:${isPortable ? '#3b82f6' : '#f59e0b'}">${driveSvg}</span>
+      <span class="sidebar-item-label">${drive.letter}</span>
+    `;
+    item.addEventListener('click', () => {
+      Navigation.navigateTo(drive.path || drive.letter);
+      this.setActive(item);
+    });
+    container.appendChild(item);
+
+    if (drive.size > 0) {
+      const bar = document.createElement('div');
+      bar.className = 'drive-bar-wrap nested';
+      bar.innerHTML = `
+        <div class="drive-bar-row">
+          <div class="drive-bar">
+            <div class="drive-bar-fill ${barClass}" style="width:${usedPct}%"></div>
+          </div>
+          <span style="font-size:10px;color:var(--text-tertiary)">${usedPct}%</span>
+        </div>
+        <span class="drive-bar-text">${freeStr}</span>
+      `;
+      container.appendChild(bar);
+    }
   },
 
   loadBookmarks() {
