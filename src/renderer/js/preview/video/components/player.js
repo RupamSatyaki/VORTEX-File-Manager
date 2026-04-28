@@ -1,16 +1,26 @@
 /* Video Preview — Player Component */
 const VideoPlayer = {
-  _videoEl: null,
+  _videoEl:   null,
+  _mediaPort: null,   // cached media server port
 
-  render(file) {
-    const src = `file:///${file.path.replace(/\\/g, '/')}`;
+  async _getMediaUrl(filePath) {
+    /* Get port once and cache it */
+    if (!this._mediaPort) {
+      this._mediaPort = await IPC.invoke('media:getPort');
+    }
+    const encoded = encodeURIComponent(filePath);
+    return `http://127.0.0.1:${this._mediaPort}/?path=${encoded}`;
+  },
+
+  async render(file) {
+    const src = await this._getMediaUrl(file.path);
     return `
       <div class="vp-player-wrap">
         <video
           id="vp-video"
           class="vp-video"
           src="${src}"
-          preload="metadata"
+          preload="auto"
         ></video>
 
         <!-- Overlay play button (shown when paused) -->
@@ -22,45 +32,53 @@ const VideoPlayer = {
           </div>
         </div>
 
-        <!-- Loading spinner -->
-        <div class="vp-loading" id="vp-loading">
+        <!-- Loading spinner (hidden by default) -->
+        <div class="vp-loading vp-hidden" id="vp-loading">
           <div class="vp-spinner"></div>
         </div>
       </div>
     `;
   },
 
-  /* Called after render is injected into DOM */
   mount() {
     this._videoEl = document.getElementById('vp-video');
     if (!this._videoEl) return;
 
-    const overlay  = document.getElementById('vp-play-overlay');
-    const loading  = document.getElementById('vp-loading');
+    const overlay = document.getElementById('vp-play-overlay');
+    const loading = document.getElementById('vp-loading');
 
-    /* Toggle play/pause on overlay click */
+    /* Overlay click → play/pause */
     overlay.addEventListener('click', () => this.togglePlay());
 
-    /* Show/hide overlay based on play state */
-    this._videoEl.addEventListener('play',  () => overlay.classList.add('vp-hidden'));
-    this._videoEl.addEventListener('pause', () => overlay.classList.remove('vp-hidden'));
-    this._videoEl.addEventListener('ended', () => overlay.classList.remove('vp-hidden'));
-
-    /* Loading state */
-    this._videoEl.addEventListener('waiting', () => loading.classList.remove('vp-hidden'));
-    this._videoEl.addEventListener('canplay', () => loading.classList.add('vp-hidden'));
-    this._videoEl.addEventListener('playing', () => loading.classList.add('vp-hidden'));
-
-    /* Propagate timeupdate to controls */
-    this._videoEl.addEventListener('timeupdate', () => {
-      VideoControls.onTimeUpdate(
-        this._videoEl.currentTime,
-        this._videoEl.duration || 0
-      );
+    /* Play state → overlay visibility */
+    this._videoEl.addEventListener('play',  () => {
+      if (!this._videoEl) return;
+      overlay.classList.add('vp-hidden');
+    });
+    this._videoEl.addEventListener('pause', () => {
+      if (!this._videoEl) return;
+      overlay.classList.remove('vp-hidden');
     });
 
-    /* Propagate metadata to info panel */
+    /* End → reset to start, stay paused */
+    this._videoEl.addEventListener('ended', () => {
+      if (!this._videoEl) return;
+      this._videoEl.currentTime = 0;
+      overlay.classList.remove('vp-hidden');
+      VideoControls.onTimeUpdate(0, this._videoEl.duration || 0);
+    });
+
+    /* Buffering spinner — only during actual network/disk wait */
+    this._videoEl.addEventListener('waiting', () => {
+      if (!this._videoEl) return;
+      if (!this._videoEl.paused) loading.classList.remove('vp-hidden');
+    });
+    this._videoEl.addEventListener('playing',        () => loading.classList.add('vp-hidden'));
+    this._videoEl.addEventListener('canplaythrough', () => loading.classList.add('vp-hidden'));
+
+    /* Metadata loaded → update info + controls */
     this._videoEl.addEventListener('loadedmetadata', () => {
+      if (!this._videoEl) return;
       VideoInfo.updateVideoMeta(
         this._videoEl.duration,
         this._videoEl.videoWidth,
@@ -69,9 +87,18 @@ const VideoPlayer = {
       VideoControls.onDurationReady(this._videoEl.duration);
       loading.classList.add('vp-hidden');
     });
+
+    /* Seek bar sync */
+    this._videoEl.addEventListener('timeupdate', () => {
+      if (!this._videoEl) return;
+      VideoControls.onTimeUpdate(
+        this._videoEl.currentTime,
+        this._videoEl.duration || 0
+      );
+    });
   },
 
-  /* ── Playback controls ── */
+  /* ── Controls ── */
   togglePlay() {
     if (!this._videoEl) return;
     this._videoEl.paused ? this._videoEl.play() : this._videoEl.pause();
@@ -107,14 +134,13 @@ const VideoPlayer = {
     this._videoEl.playbackRate = rate;
   },
 
-  isPaused() { return this._videoEl?.paused ?? true; },
-
+  isPaused()   { return this._videoEl?.paused ?? true; },
   getElement() { return this._videoEl; },
 
   destroy() {
     if (this._videoEl) {
       this._videoEl.pause();
-      this._videoEl.src = '';
+      this._videoEl.removeAttribute('src');
       this._videoEl.load();
     }
     this._videoEl = null;

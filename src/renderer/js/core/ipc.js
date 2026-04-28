@@ -20,6 +20,7 @@ const IPC = {
       'storage:read':     (k)         => window.vortexAPI.storageRead(k),
       'storage:write':    (k, d)      => window.vortexAPI.storageWrite(k, d),
       'dialog:openFolder':()          => window.vortexAPI.openFolderDialog(),
+      'media:getPort':    ()          => window.vortexAPI.getMediaPort(),
     };
     const fn = map[channel];
     if (fn) return fn(...args);

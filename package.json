@@ -25,9 +25,11 @@
     "electron-builder": "^24.9.1"
   },
   "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "adm-zip": "^0.5.10",
     "chokidar": "^3.5.3",
     "fast-glob": "^3.3.2",
+    "fluent-ffmpeg": "^2.1.3",
     "node-7z": "^3.0.0"
   },
   "build": {
@@ -46,7 +48,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "src/assets/icons/app-icon.png"
@@ -64,7 +68,10 @@
       "category": "public.app-category.utilities"
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "icon": "src/assets/icons/app-icon.png",
       "category": "Utility"
     }

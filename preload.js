@@ -38,4 +38,7 @@ contextBridge.exposeInMainWorld('vortexAPI', {
   onDrivesChanged: (callback) => {
     ipcRenderer.on('drives:changed', (event, data) => callback(data));
   },
+
+  // Media server
+  getMediaPort: () => ipcRenderer.invoke('media:getPort'),
 });

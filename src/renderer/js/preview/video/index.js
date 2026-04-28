@@ -32,7 +32,7 @@ const VideoPreview = {
   },
 
   /* ── Open ── */
-  open(file, allFiles = []) {
+  async open(file, allFiles = []) {
     if (this._isOpen) this._forceClose();
 
     /* Filter video files from current folder */
@@ -49,7 +49,7 @@ const VideoPreview = {
     this._currentFile = this._allVideos[this._currentIndex];
     this._isOpen      = true;
 
-    this._render();
+    await this._render();
     this._panel.style.display = 'flex';
 
     document.getElementById('file-preview-wrapper')?.classList.add('preview-active');
@@ -92,26 +92,26 @@ const VideoPreview = {
   },
 
   /* ── Navigate ── */
-  next() {
+  async next() {
     if (this._allVideos.length <= 1) return;
     this._currentIndex = (this._currentIndex + 1) % this._allVideos.length;
     this._currentFile  = this._allVideos[this._currentIndex];
     VideoPlayer.destroy();
-    this._render();
+    await this._render();
   },
 
-  previous() {
+  async previous() {
     if (this._allVideos.length <= 1) return;
     this._currentIndex = (this._currentIndex - 1 + this._allVideos.length) % this._allVideos.length;
     this._currentFile  = this._allVideos[this._currentIndex];
     VideoPlayer.destroy();
-    this._render();
+    await this._render();
   },
 
   /* ── Render ── */
-  _render() {
+  async _render() {
     const toolbar  = VideoToolbar.render(this._currentFile, this._currentIndex, this._allVideos.length);
-    const player   = VideoPlayer.render(this._currentFile);
+    const player   = await VideoPlayer.render(this._currentFile);
     const controls = VideoControls.render();
     const info     = VideoInfo.render(this._currentFile);
 

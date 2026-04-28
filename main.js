@@ -1,13 +1,19 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
-const path = require('path');
-const fs   = require('fs');
-const os   = require('os');
-const mtpHelper = require('./src/main/mtpHelper');
+const { app, BrowserWindow, ipcMain, shell, dialog, protocol, net } = require('electron');
+const path        = require('path');
+const fs          = require('fs');
+const os          = require('os');
+const mtpHelper   = require('./src/main/mtpHelper');
+const mediaServer = require('./src/main/mediaServer');
 
 let mainWindow;
 const isDev = process.argv.includes('--dev');
 let driveMonitorInterval = null;
 let lastDriveList = [];
+
+/* Force software video decoding only — keeps UI hardware accelerated
+   but prevents GPU state errors during video playback */
+app.commandLine.appendSwitch('disable-accelerated-video-decode');
+app.commandLine.appendSwitch('disable-accelerated-video-encode');
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -39,8 +45,108 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => { createWindow(); registerIpcHandlers(); });
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+/* ── Register vortex-media:// stream protocol ───────────────
+   Serves local video/audio files with proper range-request
+   support so Electron never buffers mid-playback.
+   Must be called before app is ready.
+──────────────────────────────────────────────────────────── */
+const MIME_MAP = {
+  mp4:  'video/mp4',
+  webm: 'video/webm',
+  mkv:  'video/x-matroska',
+  mov:  'video/quicktime',
+  avi:  'video/x-msvideo',
+  wmv:  'video/x-ms-wmv',
+  flv:  'video/x-flv',
+  m4v:  'video/x-m4v',
+  ogv:  'video/ogg',
+  '3gp':'video/3gpp',
+  mp3:  'audio/mpeg',
+  wav:  'audio/wav',
+  ogg:  'audio/ogg',
+  flac: 'audio/flac',
+  m4a:  'audio/mp4',
+};
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'vortex-media',
+    privileges: {
+      secure: true,
+      supportFetchAPI: true,
+      bypassCSP: true,
+      stream: true,
+    }
+  }
+]);
+
+app.whenReady().then(async () => {
+  /* Start local media server for zero-buffering video playback */
+  await mediaServer.start();
+
+  /* Register the actual handler after app is ready */
+  protocol.handle('vortex-media', (request) => {
+    /* URL format: vortex-media:///C:/path/to/file.mp4 */
+    const rawPath = decodeURIComponent(
+      request.url.replace('vortex-media:///', '')
+    );
+
+    /* Normalise Windows path separators */
+    const filePath = rawPath.replace(/\//g, path.sep);
+
+    try {
+      const stat = fs.statSync(filePath);
+      const ext  = path.extname(filePath).toLowerCase().slice(1);
+      const mime = MIME_MAP[ext] || 'application/octet-stream';
+      const total = stat.size;
+
+      /* Parse Range header for seek support */
+      const rangeHeader = request.headers.get('range');
+      if (rangeHeader) {
+        const [, startStr, endStr] = rangeHeader.match(/bytes=(\d+)-(\d*)/) || [];
+        const start = parseInt(startStr, 10);
+        const end   = endStr ? parseInt(endStr, 10) : total - 1;
+        const chunkSize = end - start + 1;
+
+        return new Response(
+          fs.createReadStream(filePath, { start, end, highWaterMark: 1024 * 1024 }),
+          {
+            status: 206,
+            headers: {
+              'Content-Type':   mime,
+              'Content-Range':  `bytes ${start}-${end}/${total}`,
+              'Accept-Ranges':  'bytes',
+              'Content-Length': String(chunkSize),
+            }
+          }
+        );
+      }
+
+      /* Full file response */
+      return new Response(
+        fs.createReadStream(filePath, { highWaterMark: 1024 * 1024 }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type':   mime,
+            'Accept-Ranges':  'bytes',
+            'Content-Length': String(total),
+          }
+        }
+      );
+    } catch (err) {
+      console.error('vortex-media protocol error:', err.message);
+      return new Response('File not found', { status: 404 });
+    }
+  });
+
+  createWindow();
+  registerIpcHandlers();
+});
+app.on('window-all-closed', () => {
+  mediaServer.stop();
+  if (process.platform !== 'darwin') app.quit();
+});
 app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 
 function registerIpcHandlers() {
@@ -48,6 +154,9 @@ function registerIpcHandlers() {
   ipcMain.on('window:minimize', () => mainWindow.minimize());
   ipcMain.on('window:maximize', () => mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize());
   ipcMain.on('window:close',    () => mainWindow.close());
+
+  // ── Media server port ────────────────────────────────────
+  ipcMain.handle('media:getPort', () => mediaServer.getPort());
 
   // ── Paths ────────────────────────────────────────────────
   ipcMain.handle('fs:getHomePath', () => os.homedir());

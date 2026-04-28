@@ -109,6 +109,12 @@
   height: 100%;
   object-fit: contain;
   display: block;
+  /* Force software rendering for this element only —
+     prevents GPU state errors during video decode */
+  transform: translateZ(0);
+  will-change: auto;
+  -webkit-transform: translate3d(0,0,0);
+  image-rendering: auto;
 }
 
 /* Play overlay */
