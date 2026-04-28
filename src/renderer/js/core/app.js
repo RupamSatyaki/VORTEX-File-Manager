@@ -30,6 +30,8 @@ const App = {
     Bookmarks.load();
     ImagePreview.init();
     PreviewIntegration.init();
+    VideoPreview.init();
+    VideoPreviewIntegration.init();
     
     // Setup drive monitoring
     this.setupDriveMonitoring();
