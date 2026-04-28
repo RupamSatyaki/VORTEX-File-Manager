@@ -27,28 +27,83 @@ const Navigation = {
     
     console.log('🧭 Normalized path:', normalized);
 
+    // Check if path is a file (not folder or special path)
+    let targetPath = normalized;
+    let fileToSelect = null;
+    
+    if (!normalized.includes('://') && !normalized.startsWith('Computer\\')) {
+      // Check if it's a file
+      const checkResult = await IPC.invoke('fs:stat', normalized);
+      if (checkResult.success) {
+        if (!checkResult.isDirectory) {
+          // It's a file - navigate to parent and select file
+          console.log('📄 Path is a file, navigating to parent folder');
+          fileToSelect = normalized;
+          targetPath = PathUtils.getParent(normalized);
+          console.log('📁 Parent folder:', targetPath);
+          console.log('📄 File to select:', fileToSelect);
+        }
+      }
+    }
+
     if (addHistory) {
       this._history = this._history.slice(0, this._index + 1);
-      this._history.push(normalized);
+      this._history.push(targetPath);
       this._index = this._history.length - 1;
     }
 
     this._emitNavState();
-    Events.emit('navigation:pathChanged', { path: normalized });
+    Events.emit('navigation:pathChanged', { path: targetPath });
     
     // Set tab label
-    let label = PathUtils.getBasename(normalized) || normalized;
-    if (normalized === 'thispc://') {
+    let label = PathUtils.getBasename(targetPath) || targetPath;
+    if (targetPath === 'thispc://') {
       label = 'This PC';
-    } else if (normalized.startsWith('Computer\\')) {
+    } else if (targetPath.startsWith('Computer\\')) {
       // Extract device name for portable devices
-      label = normalized.replace('Computer\\', '').split('\\')[0];
+      label = targetPath.replace('Computer\\', '').split('\\')[0];
     }
     
-    TabManager.updateActiveTab({ path: normalized, label });
-    await FileList.loadPath(normalized);
-    AddressBar.render(normalized);
-    Sidebar.setActivePath(normalized);
+    TabManager.updateActiveTab({ path: targetPath, label });
+    await FileList.loadPath(targetPath);
+    AddressBar.render(targetPath);
+    Sidebar.setActivePath(targetPath);
+    
+    // Select the file if path was a file
+    if (fileToSelect) {
+      setTimeout(() => {
+        this._selectFileByPath(fileToSelect);
+      }, 100);
+    }
+  },
+
+  _selectFileByPath(filePath) {
+    console.log('🎯 Selecting file:', filePath);
+    
+    // Find the file element
+    const fileElements = document.querySelectorAll('[data-path]');
+    for (const el of fileElements) {
+      if (el.dataset.path === filePath) {
+        // Find the file object
+        const files = FileList.getFiles();
+        const file = files.find(f => f.path === filePath);
+        
+        if (file) {
+          // Deselect all first
+          Selection.deselectAll();
+          
+          // Select this file
+          Selection.selectOnly(el, file);
+          
+          // Scroll into view
+          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          
+          console.log('✅ File selected:', file.name);
+          Footer.showStatus(`Selected: ${file.name}`, 'success');
+        }
+        break;
+      }
+    }
   },
 
   goBack() {

@@ -14,16 +14,57 @@ const AddressBar = {
     });
 
     // Input: navigate on Enter
-    input.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', async (e) => {
       if (e.key === 'Enter') {
+        e.preventDefault();
         const val = input.value.trim();
         if (val) Navigation.navigateTo(val);
         this.disableEdit();
       }
-      if (e.key === 'Escape') this.disableEdit();
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        this.disableEdit();
+      }
+      
+      // Handle Ctrl+V manually
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        e.preventDefault();
+        try {
+          const text = await navigator.clipboard.readText();
+          console.log('📋 Clipboard text:', text);
+          
+          // Insert at cursor position
+          const start = input.selectionStart;
+          const end = input.selectionEnd;
+          const currentValue = input.value;
+          
+          input.value = currentValue.substring(0, start) + text + currentValue.substring(end);
+          
+          // Set cursor position after pasted text
+          const newPosition = start + text.length;
+          input.setSelectionRange(newPosition, newPosition);
+          
+          console.log('✅ Pasted successfully');
+        } catch (err) {
+          console.error('❌ Paste failed:', err);
+          Footer.showStatus('Paste failed. Try Ctrl+L and type path manually.', 'error');
+        }
+      }
     });
 
-    input.addEventListener('blur', () => this.disableEdit());
+    // Handle native paste event as fallback
+    input.addEventListener('paste', (e) => {
+      console.log('📋 Native paste event triggered');
+      setTimeout(() => {
+        const val = input.value.trim();
+        console.log('📋 Pasted value:', val);
+      }, 10);
+    });
+
+    input.addEventListener('blur', () => {
+      // Small delay to allow Enter key to process first
+      setTimeout(() => this.disableEdit(), 100);
+    });
 
     Events.on('navigation:pathChanged', ({ path }) => {
       if (!this._editing) this.render(path);
