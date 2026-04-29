@@ -31,7 +31,8 @@
     "chokidar": "^3.5.3",
     "fast-glob": "^3.3.2",
     "fluent-ffmpeg": "^2.1.3",
-    "node-7z": "^3.0.0"
+    "node-7z": "^3.0.0",
+    "pdfjs-dist": "^3.11.174"
   },
   "build": {
     "appId": "com.vortex.filemanager",

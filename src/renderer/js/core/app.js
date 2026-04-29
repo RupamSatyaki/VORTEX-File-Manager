@@ -32,6 +32,8 @@ const App = {
     PreviewIntegration.init();
     VideoPreview.init();
     VideoPreviewIntegration.init();
+    PdfPreview.init();
+    PdfPreviewIntegration.init();
     
     // Setup drive monitoring
     this.setupDriveMonitoring();
