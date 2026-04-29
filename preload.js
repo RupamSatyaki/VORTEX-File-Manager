@@ -43,4 +43,5 @@ contextBridge.exposeInMainWorld('vortexAPI', {
   getMediaPort:         () => ipcRenderer.invoke('media:getPort'),
   getMediaProgress:     (p) => ipcRenderer.invoke('media:getProgress', p),
   getTranscodeInfo:     (p) => ipcRenderer.invoke('media:getTranscodeInfo', p),
+  getMediaDuration:     (p) => ipcRenderer.invoke('media:getDuration', p),
 });

@@ -23,6 +23,7 @@ const IPC = {
       'media:getPort':         ()  => window.vortexAPI.getMediaPort(),
       'media:getProgress':     (p) => window.vortexAPI.getMediaProgress(p),
       'media:getTranscodeInfo':(p) => window.vortexAPI.getTranscodeInfo(p),
+      'media:getDuration':     (p) => window.vortexAPI.getMediaDuration(p),
     };
     const fn = map[channel];
     if (fn) return fn(...args);

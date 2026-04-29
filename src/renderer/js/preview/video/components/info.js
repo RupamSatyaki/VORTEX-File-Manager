@@ -25,6 +25,13 @@ const VideoInfo = {
           <span class="vp-info-label">Resolution</span>
           <span class="vp-info-value" id="vp-info-resolution">Loading…</span>
         </div>
+        <div class="vp-info-row" id="vp-transcode-row" style="display:none">
+          <span class="vp-info-label">Transcoding</span>
+          <span class="vp-info-value vp-transcode-status" id="vp-transcode-status">
+            <span class="vp-transcode-dot"></span>
+            <span id="vp-transcode-status-text">Starting…</span>
+          </span>
+        </div>
         <div class="vp-info-row">
           <span class="vp-info-label">Modified</span>
           <span class="vp-info-value">${date}</span>
@@ -68,8 +75,43 @@ const VideoInfo = {
     const durEl = document.getElementById('vp-info-duration');
     const resEl = document.getElementById('vp-info-resolution');
 
-    if (durEl) durEl.textContent = this._formatDuration(duration);
-    if (resEl) resEl.textContent = (width && height) ? `${width} × ${height}` : 'Unknown';
+    /* Only update duration if it's valid and better than what we have */
+    if (durEl && duration > 0) {
+      /* Don't override if already showing a longer (more accurate) duration */
+      const current = durEl.dataset.duration ? parseFloat(durEl.dataset.duration) : 0;
+      if (duration > current) {
+        durEl.textContent = this._formatDuration(duration);
+        durEl.dataset.duration = duration;
+      }
+    }
+    if (resEl && width && height) resEl.textContent = `${width} × ${height}`;
+  },
+
+  /* Called by progress poll — show transcoding status in info panel */
+  updateTranscodeStatus(transcodedSecs, duration, done) {
+    const row  = document.getElementById('vp-transcode-row');
+    const text = document.getElementById('vp-transcode-status-text');
+    if (!row || !text) return;
+
+    if (done) {
+      row.style.display = 'none';
+      return;
+    }
+
+    row.style.display = '';
+
+    if (duration > 0) {
+      const pct = Math.min(99, Math.round((transcodedSecs / duration) * 100));
+      text.textContent = `${pct}% · ${this._fmtSec(transcodedSecs)} / ${this._fmtSec(duration)}`;
+    } else {
+      text.textContent = `${this._fmtSec(transcodedSecs)} done`;
+    }
+  },
+
+  _fmtSec(s) {
+    if (!s || isNaN(s)) return '0:00';
+    const m = Math.floor(s / 60);
+    return `${m}:${String(Math.floor(s % 60)).padStart(2,'0')}`;
   },
 
   _formatDuration(s) {

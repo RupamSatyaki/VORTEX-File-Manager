@@ -295,20 +295,6 @@ function waitForBytes(job, bytes, timeoutMs) {
   });
 }
 
-/* ── Wait until `secs` seconds of video are transcoded ── */
-function waitForDuration(job, secs, timeoutMs) {
-  return new Promise((resolve) => {
-    const deadline = Date.now() + timeoutMs;
-    const check = () => {
-      if (job.done || job.error)                { resolve(); return; }
-      if (job.transcodedSeconds >= secs)        { resolve(); return; }
-      if (Date.now() >= deadline)               { resolve(); return; }
-      setTimeout(check, 200);
-    };
-    check();
-  });
-}
-
 /* ── Serve a static file with range support ── */
 function serveFile(req, res, servePath, originalPath) {
   let stat;

@@ -4,6 +4,7 @@ const fs          = require('fs');
 const os          = require('os');
 const mtpHelper   = require('./src/main/mtpHelper');
 const mediaServer = require('./src/main/mediaServer');
+const { probeDuration } = require('./src/main/mediaDuration');
 
 let mainWindow;
 const isDev = process.argv.includes('--dev');
@@ -34,6 +35,7 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
     startDriveMonitoring();
+    if (isDev) mainWindow.webContents.openDevTools();
   });
   if (isDev) {
     mainWindow.webContents.openDevTools();
@@ -163,6 +165,10 @@ function registerIpcHandlers() {
   ipcMain.handle('media:getPort',          () => mediaServer.getPort());
   ipcMain.handle('media:getProgress',      (e, p) => mediaServer.getProgress(p));
   ipcMain.handle('media:getTranscodeInfo', (e, p) => mediaServer.getTranscodeInfo(p));
+  ipcMain.handle('media:getDuration', async (e, filePath) => {
+    return probeDuration(filePath);
+  });
+  
 
   // ── Paths ────────────────────────────────────────────────
   ipcMain.handle('fs:getHomePath', () => os.homedir());

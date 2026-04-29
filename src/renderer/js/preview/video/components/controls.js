@@ -235,7 +235,13 @@ const VideoControls = {
   },
 
   onDurationReady(duration) {
-    this._duration = duration || 0;
+    if (!duration || duration <= 0) return;
+    /* Don't override with shorter duration (partial transcoded file) */
+    if (duration < this._duration && this._duration > 0) return;
+    this._duration = duration;
+    /* Update time display immediately */
+    const time = document.getElementById('vp-time');
+    if (time) time.textContent = `0:00 / ${this._formatTime(this._duration)}`;
   },
 
   /* ── Update white buffered bar ── */
