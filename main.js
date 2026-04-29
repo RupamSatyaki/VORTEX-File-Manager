@@ -11,10 +11,9 @@ const isDev = process.argv.includes('--dev');
 let driveMonitorInterval = null;
 let lastDriveList = [];
 
-/* Force software video decoding only — keeps UI hardware accelerated
-   but prevents GPU state errors during video playback */
+/* Software video decode — prevents GPU state errors during video playback
+   Only disable video decode acceleration, not full GPU */
 app.commandLine.appendSwitch('disable-accelerated-video-decode');
-app.commandLine.appendSwitch('disable-accelerated-video-encode');
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -36,10 +35,9 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
     startDriveMonitoring();
-    if (isDev) mainWindow.webContents.openDevTools();
   });
   if (isDev) {
-    mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
     setupDevReload();
   }
   
@@ -162,7 +160,45 @@ function registerIpcHandlers() {
   ipcMain.on('window:maximize', () => mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize());
   ipcMain.on('window:close',    () => mainWindow.close());
 
-  // ── Media server port ────────────────────────────────────
+  // ── PDF Reader window ────────────────────────────────────
+  ipcMain.handle('pdf:openReader', (e, filePath) => {
+    const readerWin = new BrowserWindow({
+      width: 1200, height: 800,
+      minWidth: 800, minHeight: 600,
+      title: 'PDF Reader — Vortex',
+      frame: false,
+      transparent: true,
+      backgroundColor: '#00000000',
+      autoHideMenuBar: true,
+      menuBarVisible: false,
+      webPreferences: {
+        preload:          path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration:  false,
+        sandbox:          false,
+      },
+    });
+    readerWin.setMenu(null);
+
+    /* Window controls for this specific window */
+    ipcMain.once('pdf:minimize', () => readerWin.minimize());
+    ipcMain.once('pdf:maximize', () => readerWin.isMaximized() ? readerWin.unmaximize() : readerWin.maximize());
+    ipcMain.once('pdf:close',    () => readerWin.close());
+
+    /* Re-register on each open since once() removes after first call */
+    readerWin.on('closed', () => {
+      ipcMain.removeAllListeners('pdf:minimize');
+      ipcMain.removeAllListeners('pdf:maximize');
+      ipcMain.removeAllListeners('pdf:close');
+    });
+
+    const encodedPath = encodeURIComponent(filePath);
+    readerWin.loadFile(
+      path.join(__dirname, 'src/renderer/pdf-reader/index.html'),
+      { query: { path: encodedPath } }
+    );
+    if (isDev) readerWin.webContents.openDevTools({ mode: 'detach' });
+  });
   ipcMain.handle('media:getPort',          () => mediaServer.getPort());
   ipcMain.handle('media:getProgress',      (e, p) => mediaServer.getProgress(p));
   ipcMain.handle('media:getTranscodeInfo', (e, p) => mediaServer.getTranscodeInfo(p));

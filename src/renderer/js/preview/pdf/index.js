@@ -180,7 +180,7 @@ const PdfPreview = {
 
     /* Info actions */
     this._panel.querySelector('.pdf-action-open')
-      ?.addEventListener('click', () => IPC.invoke('shell:openPath', this._currentFile.path));
+      ?.addEventListener('click', () => IPC.invoke('pdf:openReader', this._currentFile.path));
 
     this._panel.querySelector('.pdf-action-folder')
       ?.addEventListener('click', () => IPC.invoke('shell:showItemInFolder', this._currentFile.path));
@@ -213,7 +213,7 @@ const PdfPreview = {
 
     /* Open external */
     this._panel.querySelector('.pdf-open-external')
-      ?.addEventListener('click', () => IPC.invoke('shell:openPath', this._currentFile.path));
+      ?.addEventListener('click', () => IPC.invoke('pdf:openReader', this._currentFile.path));
 
     /* File navigation */
     this._panel.querySelector('.pdf-file-prev')

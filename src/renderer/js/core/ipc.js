@@ -24,6 +24,7 @@ const IPC = {
       'media:getProgress':     (p) => window.vortexAPI.getMediaProgress(p),
       'media:getTranscodeInfo':(p) => window.vortexAPI.getTranscodeInfo(p),
       'media:getDuration':     (p) => window.vortexAPI.getMediaDuration(p),
+      'pdf:openReader':        (p) => window.vortexAPI.openPdfReader(p),
     };
     const fn = map[channel];
     if (fn) return fn(...args);

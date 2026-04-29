@@ -44,4 +44,10 @@ contextBridge.exposeInMainWorld('vortexAPI', {
   getMediaProgress:     (p) => ipcRenderer.invoke('media:getProgress', p),
   getTranscodeInfo:     (p) => ipcRenderer.invoke('media:getTranscodeInfo', p),
   getMediaDuration:     (p) => ipcRenderer.invoke('media:getDuration', p),
+
+  // PDF Reader
+  openPdfReader:        (p) => ipcRenderer.invoke('pdf:openReader', p),
+  pdfMinimize:          ()  => ipcRenderer.send('pdf:minimize'),
+  pdfMaximize:          ()  => ipcRenderer.send('pdf:maximize'),
+  pdfClose:             ()  => ipcRenderer.send('pdf:close'),
 });
