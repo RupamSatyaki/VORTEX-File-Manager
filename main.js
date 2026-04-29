@@ -81,6 +81,10 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 app.whenReady().then(async () => {
+  /* Pre-detect GPU encoder so first transcode is instant */
+  const { detectEncoder } = require('./src/main/gpuDetect');
+  detectEncoder().catch(() => {});
+
   /* Start local media server for zero-buffering video playback */
   await mediaServer.start();
 
@@ -156,7 +160,9 @@ function registerIpcHandlers() {
   ipcMain.on('window:close',    () => mainWindow.close());
 
   // ── Media server port ────────────────────────────────────
-  ipcMain.handle('media:getPort', () => mediaServer.getPort());
+  ipcMain.handle('media:getPort',          () => mediaServer.getPort());
+  ipcMain.handle('media:getProgress',      (e, p) => mediaServer.getProgress(p));
+  ipcMain.handle('media:getTranscodeInfo', (e, p) => mediaServer.getTranscodeInfo(p));
 
   // ── Paths ────────────────────────────────────────────────
   ipcMain.handle('fs:getHomePath', () => os.homedir());

@@ -147,17 +147,24 @@
   background: rgba(0,0,0,0.7);
 }
 
-/* Loading spinner */
 .vp-loading {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.4);
+  gap: 12px;
+  background: rgba(0,0,0,0.6);
   transition: opacity 200ms ease;
 }
 .vp-loading.vp-hidden { opacity: 0; pointer-events: none; }
+
+.vp-loading-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  font-family: var(--font);
+}
 
 .vp-spinner {
   width: 36px;
@@ -183,13 +190,24 @@
 .vp-seek-bar {
   position: relative;
   height: 4px;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.15);  /* gray = not transcoded */
   border-radius: 2px;
   cursor: pointer;
   transition: height 150ms ease;
 }
 .vp-seek-bar:hover { height: 6px; }
 
+/* White = transcoded/buffered */
+.vp-seek-buffered {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: rgba(255,255,255,0.45);
+  border-radius: 2px;
+  pointer-events: none;
+  transition: width 800ms ease;
+}
+
+/* Blue = played */
 .vp-seek-fill {
   position: absolute;
   left: 0; top: 0; bottom: 0;
@@ -197,6 +215,7 @@
   border-radius: 2px;
   pointer-events: none;
   transition: width 100ms linear;
+  z-index: 1;
 }
 
 .vp-seek-thumb {
@@ -429,3 +448,41 @@
   background: #000;
 }
 .vp-player-wrap:fullscreen .vp-video { object-fit: contain; }
+
+/* ── Transcode buffer bar — white, above controls ── */
+.vp-transcode-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  padding: 8px 14px 10px;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: opacity 400ms ease;
+  z-index: 10;
+}
+.vp-transcode-bar.vp-hidden { opacity: 0; pointer-events: none; }
+
+.vp-transcode-track {
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.vp-transcode-fill {
+  height: 100%;
+  background: #ffffff;
+  border-radius: 2px;
+  transition: width 1s ease;
+  box-shadow: 0 0 6px rgba(255,255,255,0.6);
+}
+
+.vp-transcode-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.55);
+  font-family: var(--font);
+  letter-spacing: 0.03em;
+}

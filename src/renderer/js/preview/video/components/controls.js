@@ -6,9 +6,12 @@ const VideoControls = {
     return `
       <div class="vp-controls">
 
-        <!-- Seek bar -->
+        <!-- Seek bar — 3 layers: gray/white(buffered)/blue(played) -->
         <div class="vp-seek-wrap">
           <div class="vp-seek-bar" id="vp-seek-bar">
+            <!-- White = transcoded/buffered -->
+            <div class="vp-seek-buffered" id="vp-seek-buffered" style="width:0%"></div>
+            <!-- Blue = played -->
             <div class="vp-seek-fill" id="vp-seek-fill" style="width:0%"></div>
             <div class="vp-seek-thumb" id="vp-seek-thumb" style="left:0%"></div>
             <div class="vp-seek-tooltip" id="vp-seek-tooltip">0:00</div>
@@ -233,6 +236,14 @@ const VideoControls = {
 
   onDurationReady(duration) {
     this._duration = duration || 0;
+  },
+
+  /* ── Update white buffered bar ── */
+  updateBuffered(transcodedSecs, duration) {
+    const buf = document.getElementById('vp-seek-buffered');
+    if (!buf || !duration) return;
+    const pct = Math.min(100, (transcodedSecs / duration) * 100);
+    buf.style.width = pct + '%';
   },
 
   onMuteChange(muted, volume) {
