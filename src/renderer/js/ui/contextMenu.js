@@ -131,8 +131,14 @@ const ContextMenu = {
       apps.forEach(app => {
         const el = document.createElement('div');
         el.className = 'cm-item';
+
+        /* Use real app icon if available, else fallback SVG */
+        const iconHtml = app.iconDataUrl
+          ? `<img src="${app.iconDataUrl}" width="16" height="16" style="border-radius:3px;object-fit:contain;">`
+          : this._getAppIcon(app.icon);
+
         el.innerHTML = `
-          <span class="cm-icon">${this._getAppIcon(app.icon)}</span>
+          <span class="cm-icon">${iconHtml}</span>
           <span class="cm-label">${app.name}</span>
         `;
         el.addEventListener('click', (e) => {

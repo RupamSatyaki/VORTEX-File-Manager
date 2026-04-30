@@ -241,15 +241,41 @@ async function getAppsForExt(ext) {
   const e = ext.toLowerCase().replace('.', '');
   if (_cache.has(e)) return _cache.get(e);
 
-  const apps = KNOWN_APPS
-    .filter(app => app._available && app.exts.includes(e))
-    .map(app => ({
-      id:     app.id,
-      name:   app.name,
-      icon:   app.icon,
-      exePath: app._exePath || null,
-      uwp:    app.uwp || null,
-    }));
+  const { nativeImage } = require('electron');
+
+  const apps = await Promise.all(
+    KNOWN_APPS
+      .filter(app => app._available && app.exts.includes(e))
+      .map(async app => {
+        let iconDataUrl = null;
+
+        /* Extract real icon from exe */
+        if (app._exePath) {
+          try {
+            const img = await nativeImage.createThumbnailFromPath(app._exePath, { width: 32, height: 32 });
+            if (!img.isEmpty()) iconDataUrl = img.toDataURL();
+          } catch {}
+
+          /* Fallback: app.getFileIcon */
+          if (!iconDataUrl) {
+            try {
+              const { app: electronApp } = require('electron');
+              const img = await electronApp.getFileIcon(app._exePath, { size: 'normal' });
+              if (!img.isEmpty()) iconDataUrl = img.toDataURL();
+            } catch {}
+          }
+        }
+
+        return {
+          id:       app.id,
+          name:     app.name,
+          icon:     app.icon,
+          iconDataUrl,
+          exePath:  app._exePath || null,
+          uwp:      app.uwp || null,
+        };
+      })
+  );
 
   _cache.set(e, apps);
   return apps;
