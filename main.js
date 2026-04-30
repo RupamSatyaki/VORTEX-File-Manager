@@ -86,6 +86,10 @@ app.whenReady().then(async () => {
   const { detectEncoder } = require('./src/main/gpuDetect');
   detectEncoder().catch(() => {});
 
+  /* Pre-detect installed apps for Open With menu (runs in background) */
+  const appDetector = require('./src/main/appDetector');
+  appDetector.detectAll().catch(() => {});
+
   /* Start local media server for zero-buffering video playback */
   await mediaServer.start();
 
@@ -162,7 +166,6 @@ function registerIpcHandlers() {
 
   // ── Open With ────────────────────────────────────────────
   const appDetector = require('./src/main/appDetector');
-  appDetector.detectAll(); /* pre-detect on startup */
 
   ipcMain.handle('shell:getAppsForExt', async (e, ext) => {
     return appDetector.getAppsForExt(ext);
