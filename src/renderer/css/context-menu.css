@@ -43,3 +43,22 @@
 .cm-shortcut { font-size: 11px; color: var(--text-tertiary); }
 
 .cm-sep { height: 1px; background: var(--border); margin: 3px 0; }
+
+/* ── Submenu arrow ── */
+.cm-arrow {
+  width: 14px; height: 14px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.cm-arrow svg { width: 12px; height: 12px; }
+
+/* ── Submenu panel (separate floating) ── */
+.context-submenu {
+  min-width: 220px;
+  animation: cmIn 100ms ease;
+}
+
+/* Highlight "New" item when submenu is open */
+.cm-item:has(.cm-arrow):hover .cm-arrow { color: var(--accent); }

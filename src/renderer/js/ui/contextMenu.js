@@ -1,64 +1,95 @@
-/* Context Menu */
+/* ============================================================
+   CONTEXT MENU — with New submenu as separate floating panel
+   ============================================================ */
 const ContextMenu = {
-  _el: null,
+  _el:  null,
+  _sub: null, /* submenu element */
 
   _icons: {
-    open: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
-    copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
-    cut: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="20" r="2"/><circle cx="6" cy="4" r="2"/><line x1="6" y1="6" x2="6" y2="18"/><line x1="6" y1="12" x2="21" y2="3"/><line x1="6" y1="12" x2="21" y2="21"/></svg>`,
-    paste: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>`,
-    rename: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
-    delete: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
-    link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
-    folder: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
-    refresh: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`,
-    bookmark: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>`,
-    newfile: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>`,
-    openwith: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>`,
-    show: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    open:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
+    openwith:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`,
+    copy:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+    cut:        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="20" r="2"/><circle cx="6" cy="4" r="2"/><line x1="6" y1="6" x2="6" y2="18"/><line x1="6" y1="12" x2="21" y2="3"/><line x1="6" y1="12" x2="21" y2="21"/></svg>`,
+    paste:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>`,
+    rename:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+    delete:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+    link:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
+    folder:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
+    refresh:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`,
+    bookmark:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>`,
+    newfile:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>`,
+    show:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
     properties: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>`,
+    chevron:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>`,
+    /* New file type icons */
+    txt:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>`,
+    code:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+    excel: `<svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>`,
+    word:  `<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+    ppt:   `<svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="14" r="2"/><line x1="12" y1="14" x2="16" y2="14"/></svg>`,
+    pdf:   `<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+    html:  `<svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+    json:  `<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+    md:    `<svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
   },
 
+  /* New file types list */
+  _newTypes: [
+    { label: 'Folder',              icon: 'folder', ext: null,    color: '#f59e0b' },
+    { sep: true },
+    { label: 'Text File',           icon: 'txt',    ext: '.txt',  color: '#e8e8f0' },
+    { label: 'Markdown File',       icon: 'md',     ext: '.md',   color: '#8b5cf6' },
+    { sep: true },
+    { label: 'Word Document',       icon: 'word',   ext: '.docx', color: '#3b82f6' },
+    { label: 'Excel Spreadsheet',   icon: 'excel',  ext: '.xlsx', color: '#22c55e' },
+    { label: 'PowerPoint',          icon: 'ppt',    ext: '.pptx', color: '#f97316' },
+    { sep: true },
+    { label: 'JavaScript File',     icon: 'code',   ext: '.js',   color: '#f59e0b' },
+    { label: 'Python File',         icon: 'code',   ext: '.py',   color: '#3b82f6' },
+    { label: 'HTML File',           icon: 'html',   ext: '.html', color: '#f97316' },
+    { label: 'CSS File',            icon: 'code',   ext: '.css',  color: '#60a5fa' },
+    { label: 'JSON File',           icon: 'json',   ext: '.json', color: '#f59e0b' },
+  ],
+
   init() {
-    this._el = document.getElementById('context-menu');
+    this._el  = document.getElementById('context-menu');
+    this._sub = document.createElement('div');
+    this._sub.className = 'context-menu context-submenu';
+    this._sub.style.display = 'none';
+    document.body.appendChild(this._sub);
+
     document.addEventListener('click', () => this.hide());
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') this.hide(); });
 
-    // Context menu on file items
     document.addEventListener('contextmenu', (e) => {
-      // Check if right-click is on a file item
       const fileItem = e.target.closest('.file-item-grid,.file-item-list,.details-row');
-      if (fileItem) {
-        // File item context menu is handled by fileList.js
-        return;
-      }
+      if (fileItem) return;
 
-      // Check if right-click is in file list area (including empty state)
-      const fileListContainer = e.target.closest('#file-list-container, .file-grid, .file-list, .file-details-wrap, .empty-state');
-      if (fileListContainer) {
+      const fileListArea = e.target.closest('#file-list-container,.file-grid,.file-list,.file-details-wrap,.empty-state');
+      if (fileListArea) {
         e.preventDefault();
         this.showForBackground(e.clientX, e.clientY);
-        return;
       }
     });
   },
 
+  /* ── File context menu ── */
   showForFile(file, x, y) {
     const selected = Selection.getSelected();
-    const isMulti = selected.length > 1;
+    const isMulti  = selected.length > 1;
 
     this.show(x, y, [
-      { label: 'Open', icon: 'open', disabled: isMulti, action: () => FileList.openFile(file) },
-      { label: 'Open with...', icon: 'openwith', disabled: isMulti, action: () => IPC.invoke('shell:openPath', file.path) },
+      { label: 'Open',          icon: 'open',       disabled: isMulti, action: () => FileList.openFile(file) },
+      { label: 'Open with…',   icon: 'openwith',   disabled: isMulti, action: () => IPC.invoke('shell:openPath', file.path) },
       { sep: true },
-      { label: 'Copy', icon: 'copy', shortcut: 'Ctrl+C', action: () => CopyPaste.copy(Selection.getSelected()) },
-      { label: 'Cut', icon: 'cut', shortcut: 'Ctrl+X', action: () => CopyPaste.cut(Selection.getSelected()) },
+      { label: 'Copy',          icon: 'copy',        shortcut: 'Ctrl+C', action: () => CopyPaste.copy(Selection.getSelected()) },
+      { label: 'Cut',           icon: 'cut',         shortcut: 'Ctrl+X', action: () => CopyPaste.cut(Selection.getSelected()) },
       { sep: true },
-      { label: 'Rename', icon: 'rename', shortcut: 'F2', disabled: isMulti, action: () => this._rename(file) },
-      { label: 'Copy Path', icon: 'link', disabled: isMulti, action: () => navigator.clipboard.writeText(file.path) },
-      { label: 'Show in Explorer', icon: 'show', disabled: isMulti, action: () => IPC.send('shell:showInFolder', file.path) },
+      { label: 'Rename',        icon: 'rename',      shortcut: 'F2',     disabled: isMulti, action: () => this._rename(file) },
+      { label: 'Copy Path',     icon: 'link',        disabled: isMulti,  action: () => navigator.clipboard.writeText(file.path) },
+      { label: 'Show in Explorer', icon: 'show',     disabled: isMulti,  action: () => IPC.send('shell:showInFolder', file.path) },
       { sep: true },
-      { label: 'Properties', icon: 'properties', disabled: isMulti, action: () => Dialogs.showProperties(file) },
+      { label: 'Properties',   icon: 'properties',  disabled: isMulti,  action: () => Dialogs.showProperties(file) },
       { sep: true },
       {
         label: isMulti ? `Delete ${selected.length} items` : 'Delete',
@@ -68,28 +99,85 @@ const ContextMenu = {
     ]);
   },
 
+  /* ── Background context menu ── */
   showForBackground(x, y) {
     const tab = TabManager.getActiveTab();
-    console.log('📋 Background context menu at:', x, y, 'Current path:', tab?.path);
-
-    if (!tab || !tab.path) {
-      console.warn('⚠️ No active tab or path for context menu');
-      return;
-    }
+    if (!tab?.path) return;
 
     this.show(x, y, [
-      { label: 'New Folder', icon: 'folder', action: () => this._newFolder(tab.path) },
-      { label: 'New File', icon: 'newfile', action: () => this._newFile(tab.path) },
+      {
+        label: 'New',
+        icon: 'folder',
+        hasSubmenu: true,
+        submenuAction: (itemEl) => this._showNewSubmenu(itemEl, tab.path),
+      },
       { sep: true },
-      { label: 'Paste', icon: 'paste', shortcut: 'Ctrl+V', disabled: !CopyPaste.hasClipboard(), action: () => CopyPaste.paste(tab.path) },
+      { label: 'Paste',           icon: 'paste',    shortcut: 'Ctrl+V', disabled: !CopyPaste.hasClipboard(), action: () => CopyPaste.paste(tab.path) },
       { sep: true },
-      { label: 'Refresh', icon: 'refresh', shortcut: 'F5', action: () => Navigation.refresh() },
-      { label: 'Add to Bookmarks', icon: 'bookmark', action: () => Bookmarks.addCurrent() },
+      { label: 'Refresh',         icon: 'refresh',  shortcut: 'F5',     action: () => Navigation.refresh() },
+      { label: 'Add to Bookmarks',icon: 'bookmark',                      action: () => Bookmarks.addCurrent() },
     ]);
   },
 
+  /* ── Show "New" submenu as separate floating panel ── */
+  _showNewSubmenu(anchorEl, parentPath) {
+    this._sub.innerHTML = '';
+
+    this._newTypes.forEach(type => {
+      if (type.sep) {
+        const sep = document.createElement('div');
+        sep.className = 'cm-sep';
+        this._sub.appendChild(sep);
+        return;
+      }
+
+      const el = document.createElement('div');
+      el.className = 'cm-item';
+      el.innerHTML = `
+        <span class="cm-icon" style="color:${type.color || 'var(--accent)'}">${this._icons[type.icon] || ''}</span>
+        <span class="cm-label">${type.label}</span>
+      `;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.hide();
+        if (type.ext === null) {
+          /* Folder */
+          this._createFolderInline(parentPath);
+        } else {
+          /* File with extension */
+          const defaultName = `New File${type.ext}`;
+          FileList.startNewFileInline(parentPath, defaultName);
+        }
+      });
+      this._sub.appendChild(el);
+    });
+
+    /* Position submenu next to the "New" item */
+    this._sub.style.display = 'block';
+    requestAnimationFrame(() => {
+      const anchorRect = anchorEl.getBoundingClientRect();
+      const subRect    = this._sub.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      let left = anchorRect.right + 4;
+      let top  = anchorRect.top;
+
+      /* Flip left if not enough space */
+      if (left + subRect.width > vw) left = anchorRect.left - subRect.width - 4;
+      /* Flip up if not enough space */
+      if (top + subRect.height > vh) top = vh - subRect.height - 8;
+
+      this._sub.style.left = left + 'px';
+      this._sub.style.top  = top  + 'px';
+    });
+  },
+
+  /* ── Build and show menu ── */
   show(x, y, items) {
+    this._sub.style.display = 'none';
     this._el.innerHTML = '';
+
     items.forEach(item => {
       if (item.sep) {
         const sep = document.createElement('div');
@@ -97,42 +185,55 @@ const ContextMenu = {
         this._el.appendChild(sep);
         return;
       }
+
       const el = document.createElement('div');
       el.className = 'cm-item' + (item.danger ? ' danger' : '') + (item.disabled ? ' disabled' : '');
       el.innerHTML = `
         <span class="cm-icon">${this._icons[item.icon] || ''}</span>
         <span class="cm-label">${item.label}</span>
-        ${item.shortcut ? `<span class="cm-shortcut">${item.shortcut}</span>` : ''}
+        ${item.shortcut    ? `<span class="cm-shortcut">${item.shortcut}</span>` : ''}
+        ${item.hasSubmenu  ? `<span class="cm-arrow">${this._icons.chevron}</span>` : ''}
       `;
+
       if (!item.disabled) {
-        el.addEventListener('click', (e) => { e.stopPropagation(); this.hide(); item.action(); });
+        if (item.hasSubmenu) {
+          /* Hover to open submenu */
+          el.addEventListener('mouseenter', () => item.submenuAction(el));
+          el.addEventListener('click', (e) => { e.stopPropagation(); item.submenuAction(el); });
+        } else {
+          el.addEventListener('click', (e) => { e.stopPropagation(); this.hide(); item.action(); });
+          /* Hide submenu when hovering other items */
+          el.addEventListener('mouseenter', () => { this._sub.style.display = 'none'; });
+        }
       }
+
       this._el.appendChild(el);
     });
 
     this._el.style.display = 'block';
-    // Position after display so we can measure
     requestAnimationFrame(() => {
       const rect = this._el.getBoundingClientRect();
       const vw = window.innerWidth, vh = window.innerHeight;
-      this._el.style.left = (x + rect.width > vw ? vw - rect.width - 8 : x) + 'px';
-      this._el.style.top = (y + rect.height > vh ? vh - rect.height - 8 : y) + 'px';
+      this._el.style.left = (x + rect.width  > vw ? vw - rect.width  - 8 : x) + 'px';
+      this._el.style.top  = (y + rect.height > vh ? vh - rect.height - 8 : y) + 'px';
     });
   },
 
-  hide() { if (this._el) this._el.style.display = 'none'; },
+  hide() {
+    if (this._el)  this._el.style.display  = 'none';
+    if (this._sub) this._sub.style.display = 'none';
+  },
 
+  /* ── Actions ── */
   async _rename(file) {
-    // Find the element for this file and do inline rename
     const el = document.querySelector(`[data-path="${CSS.escape(file.path)}"]`);
     if (el) {
       FileList.startInlineRename(el, file);
     } else {
-      // Fallback: dialog
       Dialogs.showRenameDialog(file, async (newName) => {
         if (!newName || newName === file.name) return;
         const newPath = PathUtils.join(PathUtils.getParent(file.path), newName);
-        const result = await IPC.invoke('fs:rename', file.path, newPath);
+        const result  = await IPC.invoke('fs:rename', file.path, newPath);
         if (result.success) Navigation.refresh();
         else Footer.showStatus('Rename failed: ' + result.error, 'error');
       });
@@ -141,161 +242,74 @@ const ContextMenu = {
 
   async _delete(files) {
     if (!files.length) return;
-    console.log('Delete requested for:', files);
     Dialogs.showDeleteConfirm(files, async () => {
-      console.log('Delete confirmed, deleting files...');
-      for (const f of files) {
-        const result = await IPC.invoke('fs:delete', f.path);
-        console.log('Delete result for', f.path, ':', result);
-      }
+      for (const f of files) await IPC.invoke('fs:delete', f.path);
       Navigation.refresh();
       Footer.showStatus(`Deleted ${files.length} item${files.length !== 1 ? 's' : ''}`, 'success');
     });
   },
 
   async _newFolder(parentPath) {
-    if (!parentPath) {
-      console.error('❌ No parent path provided for new folder');
-      Footer.showStatus('Cannot create folder: No path', 'error');
-      return;
-    }
-
-    console.log('📁 Creating folder in:', parentPath);
-
-    // Use inline creation instead of prompt
+    if (!parentPath) return;
     this._createFolderInline(parentPath);
   },
 
   _createFolderInline(parentPath) {
-    const defaultName = 'New Folder';
-
-    console.log('🎨 Creating inline folder input...');
-
-    // Find which view is active
-    const gridContainer = document.getElementById('file-grid');
-    const listContainer = document.getElementById('file-list');
-    const detailsContainer = document.getElementById('file-details');
-    const emptyState = document.getElementById('empty-state');
+    const gridContainer   = document.getElementById('file-grid');
+    const listContainer   = document.getElementById('file-list');
+    const detailsContainer= document.getElementById('file-details');
+    const emptyState      = document.getElementById('empty-state');
 
     let targetContainer = null;
     let isGrid = false;
 
-    // Check which container is visible
-    if (gridContainer.style.display !== 'none') {
-      targetContainer = gridContainer;
-      isGrid = true;
-    } else if (listContainer.style.display !== 'none') {
-      targetContainer = listContainer;
-      isGrid = false;
-    } else if (detailsContainer.style.display !== 'none') {
-      targetContainer = detailsContainer;
-      isGrid = false;
-    } else if (emptyState.style.display !== 'none') {
-      // Empty folder - show grid by default
-      console.log('📭 Empty folder detected, showing grid view');
+    if (gridContainer.style.display !== 'none')        { targetContainer = gridContainer;    isGrid = true;  }
+    else if (listContainer.style.display !== 'none')   { targetContainer = listContainer;    isGrid = false; }
+    else if (detailsContainer.style.display !== 'none'){ targetContainer = detailsContainer; isGrid = false; }
+    else {
       emptyState.style.display = 'none';
       gridContainer.style.display = 'grid';
       targetContainer = gridContainer;
       isGrid = true;
     }
 
-    if (!targetContainer) {
-      console.error('❌ No target container found!');
-      Footer.showStatus('Cannot create folder: No container', 'error');
-      return;
-    }
-
-    console.log('✅ Target container:', targetContainer.id, 'isGrid:', isGrid);
+    if (!targetContainer) return;
 
     const placeholder = document.createElement('div');
     placeholder.className = isGrid ? 'file-item-grid' : 'file-item-list';
     placeholder.style.outline = '2px solid var(--accent)';
-    placeholder.id = 'new-folder-placeholder';
 
-    const folderSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="${isGrid ? 36 : 18}" height="${isGrid ? 36 : 18}"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
-
+    const sz = isGrid ? 36 : 18;
+    const folderSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="${sz}" height="${sz}"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
     const iconHtml = `<div class="${isGrid ? 'file-icon-wrap' : 'file-icon-sm'}" style="color:#f59e0b">${folderSvg}</div>`;
 
     const input = document.createElement('input');
-    input.type = 'text';
+    input.type      = 'text';
     input.className = 'inline-rename-input';
-    input.value = defaultName;
+    input.value     = 'New Folder';
     input.style.width = isGrid ? '90px' : '200px';
 
     placeholder.innerHTML = iconHtml;
     placeholder.appendChild(input);
-
     targetContainer.insertBefore(placeholder, targetContainer.firstChild);
-    placeholder.scrollIntoView({ block: 'nearest' });
 
-    console.log('✅ Input field created, focusing...');
-    setTimeout(() => {
-      input.focus();
-      input.select();
-    }, 50);
+    setTimeout(() => { input.focus(); input.select(); }, 50);
 
     let committed = false;
-
     const commit = async () => {
       if (committed) return;
       committed = true;
       const name = input.value.trim();
       placeholder.remove();
-
-      if (!name) {
-        console.log('⚠️ Folder creation cancelled (empty name)');
-        // If folder is still empty, show empty state again
-        if (targetContainer.children.length === 0) {
-          targetContainer.style.display = 'none';
-          emptyState.style.display = 'flex';
-        }
-        return;
-      }
-
-      const fullPath = PathUtils.join(parentPath, name);
-      console.log('📁 Creating folder at:', fullPath);
-
-      try {
-        const result = await IPC.invoke('fs:mkdir', fullPath);
-        console.log('✅ Create folder result:', result);
-
-        if (result.success) {
-          Footer.showStatus(`Created folder: ${name}`, 'success');
-          Navigation.refresh();
-        } else {
-          console.error('❌ Failed to create folder:', result.error);
-          Footer.showStatus('Failed: ' + result.error, 'error');
-          // Show empty state if needed
-          if (targetContainer.children.length === 0) {
-            targetContainer.style.display = 'none';
-            emptyState.style.display = 'flex';
-          }
-        }
-      } catch (err) {
-        console.error('❌ Exception creating folder:', err);
-        Footer.showStatus('Error: ' + err.message, 'error');
-        // Show empty state if needed
-        if (targetContainer.children.length === 0) {
-          targetContainer.style.display = 'none';
-          emptyState.style.display = 'flex';
-        }
-      }
+      if (!name) { this._restoreEmpty(targetContainer, emptyState); return; }
+      const result = await IPC.invoke('fs:mkdir', PathUtils.join(parentPath, name));
+      if (result.success) { Footer.showStatus(`Created: ${name}`, 'success'); Navigation.refresh(); }
+      else { Footer.showStatus('Failed: ' + result.error, 'error'); this._restoreEmpty(targetContainer, emptyState); }
     };
-
-    const cancel = () => {
-      if (committed) return;
-      committed = true;
-      placeholder.remove();
-      console.log('⚠️ Folder creation cancelled');
-      // If folder is still empty, show empty state again
-      if (targetContainer.children.length === 0) {
-        targetContainer.style.display = 'none';
-        emptyState.style.display = 'flex';
-      }
-    };
+    const cancel = () => { if (committed) return; committed = true; placeholder.remove(); this._restoreEmpty(targetContainer, emptyState); };
 
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      if (e.key === 'Enter')  { e.preventDefault(); commit(); }
       if (e.key === 'Escape') { e.preventDefault(); cancel(); }
       e.stopPropagation();
     });
@@ -303,12 +317,15 @@ const ContextMenu = {
     input.addEventListener('click', (e) => e.stopPropagation());
   },
 
+  _restoreEmpty(container, emptyState) {
+    if (container && container.children.length === 0) {
+      container.style.display = 'none';
+      if (emptyState) emptyState.style.display = 'flex';
+    }
+  },
+
   async _newFile(parentPath) {
-  if (!parentPath) {
-    console.error('No parent path provided for new file');
-    return;
+    if (!parentPath) return;
+    FileList.startNewFileInline(parentPath, 'New File.txt');
   }
-  console.log('Creating file in:', parentPath);
-  FileList.startNewFileInline(parentPath, 'New File.txt');
-}
 };
