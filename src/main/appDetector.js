@@ -188,7 +188,59 @@ async function getAppsForExt(ext) {
   if (!_ready) await detectAll();
 
   const e = ext.toLowerCase().replace('.', '');
-  return _extCache.get(e) || [];
+  const apps = _extCache.get(e) || [];
+
+  /* Prepend Vortex internal players */
+  const internal = getInternalApps(e);
+
+  return [...internal, ...apps];
+}
+
+/* ── Internal Vortex apps ── */
+const VIDEO_EXTS = ['mp4','mkv','avi','mov','wmv','flv','m4v','ogv','webm','3gp'];
+const IMAGE_EXTS = ['jpg','jpeg','png','gif','bmp','webp','svg','tiff'];
+const PDF_EXTS   = ['pdf'];
+
+function getInternalApps(ext) {
+  const apps = [];
+
+  if (VIDEO_EXTS.includes(ext)) {
+    apps.push({
+      id:          'vortex-video',
+      name:        'Vortex Player',
+      icon:        'vortex',
+      iconDataUrl: null,
+      internal:    'video',
+      exePath:     null,
+      uwp:         null,
+    });
+  }
+
+  if (IMAGE_EXTS.includes(ext)) {
+    apps.push({
+      id:          'vortex-image',
+      name:        'Vortex Viewer',
+      icon:        'vortex',
+      iconDataUrl: null,
+      internal:    'image',
+      exePath:     null,
+      uwp:         null,
+    });
+  }
+
+  if (PDF_EXTS.includes(ext)) {
+    apps.push({
+      id:          'vortex-pdf',
+      name:        'Vortex PDF Reader',
+      icon:        'vortex',
+      iconDataUrl: null,
+      internal:    'pdf',
+      exePath:     null,
+      uwp:         null,
+    });
+  }
+
+  return apps;
 }
 
 /* ── Open file with specific app ── */

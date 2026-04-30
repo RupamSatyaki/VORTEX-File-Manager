@@ -144,7 +144,12 @@ const ContextMenu = {
         el.addEventListener('click', (e) => {
           e.stopPropagation();
           this.hide();
-          IPC.invoke('shell:openWith', file.path, app);
+          if (app.internal) {
+            /* Open in Vortex internal player */
+            this._openInternal(file, app.internal);
+          } else {
+            IPC.invoke('shell:openWith', file.path, app);
+          }
         });
         this._sub.appendChild(el);
       });
@@ -191,6 +196,7 @@ const ContextMenu = {
       acrobat:   `<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
       winrar:    `<svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`,
       '7zip':    `<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`,
+      vortex:    `<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="2"/></svg>`,
     };
     return appIcons[iconId] || this._icons.openwith;
   },
@@ -337,6 +343,18 @@ const ContextMenu = {
   hide() {
     if (this._el)  this._el.style.display  = 'none';
     if (this._sub) this._sub.style.display = 'none';
+  },
+
+  /* ── Open in Vortex internal player ── */
+  _openInternal(file, type) {
+    const files = FileList.getFiles();
+    if (type === 'video') {
+      VideoPreview.open(file, files);
+    } else if (type === 'image') {
+      ImagePreview.open(file, files);
+    } else if (type === 'pdf') {
+      IPC.invoke('pdf:openReader', file.path);
+    }
   },
 
   /* ── Actions ── */
