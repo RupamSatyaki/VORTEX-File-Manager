@@ -160,7 +160,16 @@ function registerIpcHandlers() {
   ipcMain.on('window:maximize', () => mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize());
   ipcMain.on('window:close',    () => mainWindow.close());
 
-  // ── PDF Reader window ────────────────────────────────────
+  // ── Open With ────────────────────────────────────────────
+  const appDetector = require('./src/main/appDetector');
+  appDetector.detectAll(); /* pre-detect on startup */
+
+  ipcMain.handle('shell:getAppsForExt', async (e, ext) => {
+    return appDetector.getAppsForExt(ext);
+  });
+  ipcMain.handle('shell:openWith', (e, filePath, app) => {
+    appDetector.openWith(filePath, app);
+  });
   ipcMain.handle('pdf:openReader', (e, filePath) => {
     const readerWin = new BrowserWindow({
       width: 1200, height: 800,

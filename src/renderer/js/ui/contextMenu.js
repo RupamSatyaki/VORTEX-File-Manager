@@ -79,17 +79,23 @@ const ContextMenu = {
     const isMulti  = selected.length > 1;
 
     this.show(x, y, [
-      { label: 'Open',          icon: 'open',       disabled: isMulti, action: () => FileList.openFile(file) },
-      { label: 'Open with…',   icon: 'openwith',   disabled: isMulti, action: () => IPC.invoke('shell:openPath', file.path) },
+      { label: 'Open',          icon: 'open',     disabled: isMulti, action: () => FileList.openFile(file) },
+      {
+        label: 'Open with…',
+        icon: 'openwith',
+        disabled: isMulti,
+        hasSubmenu: true,
+        submenuAction: (itemEl) => this._showOpenWithSubmenu(itemEl, file),
+      },
       { sep: true },
-      { label: 'Copy',          icon: 'copy',        shortcut: 'Ctrl+C', action: () => CopyPaste.copy(Selection.getSelected()) },
-      { label: 'Cut',           icon: 'cut',         shortcut: 'Ctrl+X', action: () => CopyPaste.cut(Selection.getSelected()) },
+      { label: 'Copy',          icon: 'copy',     shortcut: 'Ctrl+C', action: () => CopyPaste.copy(Selection.getSelected()) },
+      { label: 'Cut',           icon: 'cut',      shortcut: 'Ctrl+X', action: () => CopyPaste.cut(Selection.getSelected()) },
       { sep: true },
-      { label: 'Rename',        icon: 'rename',      shortcut: 'F2',     disabled: isMulti, action: () => this._rename(file) },
-      { label: 'Copy Path',     icon: 'link',        disabled: isMulti,  action: () => navigator.clipboard.writeText(file.path) },
-      { label: 'Show in Explorer', icon: 'show',     disabled: isMulti,  action: () => IPC.send('shell:showInFolder', file.path) },
+      { label: 'Rename',        icon: 'rename',   shortcut: 'F2',     disabled: isMulti, action: () => this._rename(file) },
+      { label: 'Copy Path',     icon: 'link',     disabled: isMulti,  action: () => navigator.clipboard.writeText(file.path) },
+      { label: 'Show in Explorer', icon: 'show',  disabled: isMulti,  action: () => IPC.send('shell:showInFolder', file.path) },
       { sep: true },
-      { label: 'Properties',   icon: 'properties',  disabled: isMulti,  action: () => Dialogs.showProperties(file) },
+      { label: 'Properties',   icon: 'properties', disabled: isMulti, action: () => Dialogs.showProperties(file) },
       { sep: true },
       {
         label: isMulti ? `Delete ${selected.length} items` : 'Delete',
@@ -97,6 +103,90 @@ const ContextMenu = {
         action: () => this._delete(Selection.getSelected())
       },
     ]);
+  },
+
+  /* ── Open With submenu ── */
+  async _showOpenWithSubmenu(anchorEl, file) {
+    this._sub.innerHTML = '';
+
+    /* Loading state */
+    const loading = document.createElement('div');
+    loading.className = 'cm-item disabled';
+    loading.innerHTML = `<span class="cm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span><span class="cm-label">Detecting apps…</span>`;
+    this._sub.appendChild(loading);
+    this._positionSubmenu(anchorEl);
+    this._sub.style.display = 'block';
+
+    const ext  = (file.ext || '').toLowerCase();
+    const apps = await IPC.invoke('shell:getAppsForExt', ext).catch(() => []);
+
+    this._sub.innerHTML = '';
+
+    if (!apps.length) {
+      const none = document.createElement('div');
+      none.className = 'cm-item disabled';
+      none.innerHTML = `<span class="cm-label" style="color:var(--text-tertiary)">No apps found</span>`;
+      this._sub.appendChild(none);
+    } else {
+      apps.forEach(app => {
+        const el = document.createElement('div');
+        el.className = 'cm-item';
+        el.innerHTML = `
+          <span class="cm-icon">${this._getAppIcon(app.icon)}</span>
+          <span class="cm-label">${app.name}</span>
+        `;
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.hide();
+          IPC.invoke('shell:openWith', file.path, app);
+        });
+        this._sub.appendChild(el);
+      });
+    }
+
+    /* Always show "Choose another app" at bottom */
+    const sep = document.createElement('div');
+    sep.className = 'cm-sep';
+    this._sub.appendChild(sep);
+
+    const choose = document.createElement('div');
+    choose.className = 'cm-item';
+    choose.innerHTML = `
+      <span class="cm-icon">${this._icons.openwith}</span>
+      <span class="cm-label">Choose another app…</span>
+    `;
+    choose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.hide();
+      IPC.invoke('shell:openPath', file.path);
+    });
+    this._sub.appendChild(choose);
+
+    this._positionSubmenu(anchorEl);
+  },
+
+  /* App icon SVGs */
+  _getAppIcon(iconId) {
+    const appIcons = {
+      chrome:    `<svg viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>`,
+      firefox:   `<svg viewBox="0 0 24 24" fill="none" stroke="#ff6611" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 7.07 17.07"/></svg>`,
+      edge:      `<svg viewBox="0 0 24 24" fill="none" stroke="#0078d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4"/></svg>`,
+      vlc:       `<svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
+      mpc:       `<svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
+      wmp:       `<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
+      photos:    `<svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+      irfanview: `<svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>`,
+      vscode:    `<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+      notepad:   `<svg viewBox="0 0 24 24" fill="none" stroke="#e8e8f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+      notepadpp: `<svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+      word:      `<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+      excel:     `<svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+      ppt:       `<svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+      acrobat:   `<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+      winrar:    `<svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`,
+      '7zip':    `<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`,
+    };
+    return appIcons[iconId] || this._icons.openwith;
   },
 
   /* ── Background context menu ── */
@@ -119,7 +209,26 @@ const ContextMenu = {
     ]);
   },
 
-  /* ── Show "New" submenu as separate floating panel ── */
+  /* ── Position submenu next to anchor element ── */
+  _positionSubmenu(anchorEl) {
+    requestAnimationFrame(() => {
+      const anchorRect = anchorEl.getBoundingClientRect();
+      const subRect    = this._sub.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      let left = anchorRect.right + 4;
+      let top  = anchorRect.top;
+
+      if (left + subRect.width  > vw) left = anchorRect.left - subRect.width - 4;
+      if (top  + subRect.height > vh) top  = vh - subRect.height - 8;
+
+      this._sub.style.left = left + 'px';
+      this._sub.style.top  = top  + 'px';
+    });
+  },
+
+  /* ── Show "New" submenu ── */
   _showNewSubmenu(anchorEl, parentPath) {
     this._sub.innerHTML = '';
 

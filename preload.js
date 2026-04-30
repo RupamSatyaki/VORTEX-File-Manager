@@ -23,9 +23,11 @@ contextBridge.exposeInMainWorld('vortexAPI', {
   readFile: (path) => ipcRenderer.invoke('fs:readFile', path),
 
   // Shell
-  openPath: (path) => ipcRenderer.invoke('shell:openPath', path),
-  showInFolder: (path) => ipcRenderer.send('shell:showInFolder', path),
-  openExternal: (url) => ipcRenderer.send('shell:openExternal', url),
+  openPath:         (path) => ipcRenderer.invoke('shell:openPath', path),
+  showInFolder:     (path) => ipcRenderer.send('shell:showInFolder', path),
+  openExternal:     (url)  => ipcRenderer.send('shell:openExternal', url),
+  getAppsForExt:    (ext)  => ipcRenderer.invoke('shell:getAppsForExt', ext),
+  openWith:         (filePath, app) => ipcRenderer.invoke('shell:openWith', filePath, app),
 
   // Storage
   storageRead: (key) => ipcRenderer.invoke('storage:read', key),
