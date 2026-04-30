@@ -28,6 +28,11 @@ contextBridge.exposeInMainWorld('vortexAPI', {
   openExternal:     (url)  => ipcRenderer.send('shell:openExternal', url),
   getAppsForExt:    (ext)  => ipcRenderer.invoke('shell:getAppsForExt', ext),
   openWith:         (filePath, app) => ipcRenderer.invoke('shell:openWith', filePath, app),
+  share:            (paths) => ipcRenderer.invoke('shell:share', paths),
+  setWallpaper:     (p)    => ipcRenderer.invoke('shell:setWallpaper', p),
+  openTerminal:     (dir)  => ipcRenderer.invoke('shell:openTerminal', dir),
+  compressToZip:    (files, dest) => ipcRenderer.invoke('fs:compressToZip', files, dest),
+  extractZip:       (zip, dest)   => ipcRenderer.invoke('fs:extractZip', zip, dest),
 
   // Storage
   storageRead: (key) => ipcRenderer.invoke('storage:read', key),

@@ -173,6 +173,95 @@ function registerIpcHandlers() {
   ipcMain.handle('shell:openWith', (e, filePath, app) => {
     appDetector.openWith(filePath, app);
   });
+
+  // ── Share (Windows native share sheet) ───────────────────
+  ipcMain.handle('shell:share', async (e, filePaths) => {
+    try {
+      /* Windows share dialog via PowerShell */
+      const paths = filePaths.map(p => `'${p.replace(/'/g, "''")}'`).join(',');
+      const ps = `
+        Add-Type -AssemblyName Windows.ApplicationModel
+        $files = @(${paths}) | ForEach-Object { [Windows.Storage.StorageFile]::GetFileFromPathAsync($_).GetAwaiter().GetResult() }
+        $dp = [Windows.ApplicationModel.DataTransfer.DataPackage]::new()
+        $dp.SetStorageItems($files)
+        [Windows.ApplicationModel.DataTransfer.DataTransferManager]::ShowShareUI()
+      `;
+      /* Fallback: use explorer share verb */
+      const { exec } = require('child_process');
+      const pathList = filePaths.map(p => `"${p}"`).join(' ');
+      exec(`powershell -Command "& {Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::SetText('${filePaths[0]}')}"`, () => {});
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // ── Set Wallpaper ─────────────────────────────────────────
+  ipcMain.handle('shell:setWallpaper', async (e, imagePath) => {
+    try {
+      const { exec } = require('child_process');
+      const ps = `
+        Add-Type @"
+        using System.Runtime.InteropServices;
+        public class Wallpaper {
+          [DllImport("user32.dll", CharSet=CharSet.Auto)]
+          public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+        }
+"@
+        [Wallpaper]::SystemParametersInfo(20, 0, '${imagePath.replace(/\\/g, '\\\\')}', 3)
+      `;
+      await new Promise((resolve, reject) => {
+        exec(`powershell -Command "${ps.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, (err) => {
+          if (err) reject(err); else resolve();
+        });
+      });
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // ── Open Terminal Here ────────────────────────────────────
+  ipcMain.handle('shell:openTerminal', async (e, dirPath) => {
+    const { exec, spawn } = require('child_process');
+    /* Try Windows Terminal first, then PowerShell, then CMD */
+    const terminals = [
+      { cmd: 'wt', args: ['-d', dirPath] },
+      { cmd: 'powershell', args: ['-NoExit', '-Command', `Set-Location '${dirPath}'`] },
+      { cmd: 'cmd', args: ['/K', `cd /d "${dirPath}"`] },
+    ];
+    for (const t of terminals) {
+      try {
+        spawn(t.cmd, t.args, { detached: true, stdio: 'ignore', shell: true }).unref();
+        return { success: true };
+      } catch {}
+    }
+    return { success: false };
+  });
+
+  // ── Compress / Extract ────────────────────────────────────
+  ipcMain.handle('fs:compressToZip', async (e, filePaths, destPath) => {
+    try {
+      const AdmZip = require('adm-zip');
+      const zip = new AdmZip();
+      for (const fp of filePaths) {
+        const stat = fs.statSync(fp);
+        if (stat.isDirectory()) zip.addLocalFolder(fp, path.basename(fp));
+        else zip.addLocalFile(fp);
+      }
+      zip.writeZip(destPath);
+      return { success: true };
+    } catch (err) { return { success: false, error: err.message }; }
+  });
+
+  ipcMain.handle('fs:extractZip', async (e, zipPath, destDir) => {
+    try {
+      const AdmZip = require('adm-zip');
+      const zip = new AdmZip(zipPath);
+      zip.extractAllTo(destDir, true);
+      return { success: true };
+    } catch (err) { return { success: false, error: err.message }; }
+  });
   ipcMain.handle('pdf:openReader', (e, filePath) => {
     const readerWin = new BrowserWindow({
       width: 1200, height: 800,

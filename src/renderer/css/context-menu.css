@@ -62,3 +62,7 @@
 
 /* Highlight "New" item when submenu is open */
 .cm-item:has(.cm-arrow):hover .cm-arrow { color: var(--accent); }
+
+/* Active/checked item in submenu */
+.cm-item-active { color: var(--accent); }
+.cm-item-active:hover { background: var(--accent-dim); }

@@ -21,6 +21,15 @@ const ContextMenu = {
     show:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
     properties: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>`,
     chevron:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>`,
+    share:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`,
+    compress:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`,
+    extract:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    pin:        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>`,
+    wallpaper:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+    terminal:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`,
+    sortby:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>`,
+    view:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
+    relpath:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
     /* New file type icons */
     txt:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>`,
     code:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
@@ -75,34 +84,53 @@ const ContextMenu = {
 
   /* ── File context menu ── */
   showForFile(file, x, y) {
-    const selected = Selection.getSelected();
-    const isMulti  = selected.length > 1;
+    const selected  = Selection.getSelected();
+    const isMulti   = selected.length > 1;
+    const isImage   = ['jpg','jpeg','png','gif','bmp','webp','svg','tiff'].includes((file.ext||'').toLowerCase());
+    const isArchive = ['zip','rar','7z','tar','gz','bz2'].includes((file.ext||'').toLowerCase());
+    const tab       = TabManager.getActiveTab();
 
-    this.show(x, y, [
-      { label: 'Open',          icon: 'open',     disabled: isMulti, action: () => FileList.openFile(file) },
-      {
-        label: 'Open with…',
-        icon: 'openwith',
-        disabled: isMulti,
-        hasSubmenu: true,
-        submenuAction: (itemEl) => this._showOpenWithSubmenu(itemEl, file),
+    const items = [
+      { label: 'Open',         icon: 'open',     disabled: isMulti, action: () => FileList.openFile(file) },
+      { label: 'Open with…',  icon: 'openwith', disabled: isMulti, hasSubmenu: true, submenuAction: (el) => this._showOpenWithSubmenu(el, file) },
+      { sep: true },
+      { label: 'Share',        icon: 'share',    action: () => IPC.invoke('shell:share', selected.map(f => f.path)) },
+      { sep: true },
+      /* Compress / Extract */
+      ...(isArchive ? [
+        { label: 'Extract Here',      icon: 'extract', action: () => this._extractHere(file) },
+        { label: 'Extract to Folder', icon: 'extract', action: () => this._extractToFolder(file) },
+        { sep: true },
+      ] : [
+        { label: 'Compress to ZIP',   icon: 'compress', action: () => this._compressToZip(selected) },
+        { sep: true },
+      ]),
+      { label: 'Copy',         icon: 'copy',     shortcut: 'Ctrl+C', action: () => CopyPaste.copy(selected) },
+      { label: 'Cut',          icon: 'cut',      shortcut: 'Ctrl+X', action: () => CopyPaste.cut(selected) },
+      { sep: true },
+      { label: 'Rename',       icon: 'rename',   shortcut: 'F2',  disabled: isMulti, action: () => this._rename(file) },
+      { label: 'Copy Path',    icon: 'link',     disabled: isMulti, action: () => navigator.clipboard.writeText(file.path) },
+      { label: 'Copy Relative Path', icon: 'relpath', disabled: isMulti || !tab?.path,
+        action: () => {
+          const rel = file.path.replace(tab.path, '').replace(/^[/\\]/, '');
+          navigator.clipboard.writeText(rel);
+        }
       },
+      { label: 'Show in Explorer', icon: 'show', disabled: isMulti, action: () => IPC.send('shell:showInFolder', file.path) },
       { sep: true },
-      { label: 'Copy',          icon: 'copy',     shortcut: 'Ctrl+C', action: () => CopyPaste.copy(Selection.getSelected()) },
-      { label: 'Cut',           icon: 'cut',      shortcut: 'Ctrl+X', action: () => CopyPaste.cut(Selection.getSelected()) },
+      { label: 'Pin to Quick Access', icon: 'pin', disabled: isMulti, action: () => this._pinToQuickAccess(file) },
+      ...(isImage ? [{ label: 'Set as Wallpaper', icon: 'wallpaper', disabled: isMulti, action: () => this._setWallpaper(file) }] : []),
       { sep: true },
-      { label: 'Rename',        icon: 'rename',   shortcut: 'F2',     disabled: isMulti, action: () => this._rename(file) },
-      { label: 'Copy Path',     icon: 'link',     disabled: isMulti,  action: () => navigator.clipboard.writeText(file.path) },
-      { label: 'Show in Explorer', icon: 'show',  disabled: isMulti,  action: () => IPC.send('shell:showInFolder', file.path) },
-      { sep: true },
-      { label: 'Properties',   icon: 'properties', disabled: isMulti, action: () => Dialogs.showProperties(file) },
+      { label: 'Properties',  icon: 'properties', disabled: isMulti, action: () => Dialogs.showProperties(file) },
       { sep: true },
       {
         label: isMulti ? `Delete ${selected.length} items` : 'Delete',
         icon: 'delete', shortcut: 'Del', danger: true,
-        action: () => this._delete(Selection.getSelected())
+        action: () => this._delete(selected)
       },
-    ]);
+    ];
+
+    this.show(x, y, items);
   },
 
   /* ── Open With submenu ── */
@@ -206,19 +234,101 @@ const ContextMenu = {
     const tab = TabManager.getActiveTab();
     if (!tab?.path) return;
 
+    const sortBy    = FileList._sortBy    || 'name';
+    const sortOrder = FileList._sortOrder || 'asc';
+    const view      = FileList._view      || 'grid';
+
     this.show(x, y, [
-      {
-        label: 'New',
-        icon: 'folder',
-        hasSubmenu: true,
-        submenuAction: (itemEl) => this._showNewSubmenu(itemEl, tab.path),
-      },
+      { label: 'New',  icon: 'folder',   hasSubmenu: true, submenuAction: (el) => this._showNewSubmenu(el, tab.path) },
       { sep: true },
-      { label: 'Paste',           icon: 'paste',    shortcut: 'Ctrl+V', disabled: !CopyPaste.hasClipboard(), action: () => CopyPaste.paste(tab.path) },
+      { label: 'Paste', icon: 'paste',   shortcut: 'Ctrl+V', disabled: !CopyPaste.hasClipboard(), action: () => CopyPaste.paste(tab.path) },
       { sep: true },
-      { label: 'Refresh',         icon: 'refresh',  shortcut: 'F5',     action: () => Navigation.refresh() },
-      { label: 'Add to Bookmarks',icon: 'bookmark',                      action: () => Bookmarks.addCurrent() },
+      { label: 'Sort By', icon: 'sortby', hasSubmenu: true, submenuAction: (el) => this._showSortSubmenu(el, sortBy, sortOrder) },
+      { label: 'View',    icon: 'view',   hasSubmenu: true, submenuAction: (el) => this._showViewSubmenu(el, view) },
+      { sep: true },
+      { label: 'Open Terminal Here', icon: 'terminal', action: () => IPC.invoke('shell:openTerminal', tab.path) },
+      { sep: true },
+      { label: 'Refresh',          icon: 'refresh',  shortcut: 'F5', action: () => Navigation.refresh() },
+      { label: 'Add to Bookmarks', icon: 'bookmark',                  action: () => Bookmarks.addCurrent() },
     ]);
+  },
+
+  /* ── Sort By submenu ── */
+  _showSortSubmenu(anchorEl, currentSort, currentOrder) {
+    this._sub.innerHTML = '';
+
+    const sorts = [
+      { key: 'name',     label: 'Name',          sub: [{ order: 'asc', label: 'A → Z' }, { order: 'desc', label: 'Z → A' }] },
+      { key: 'modified', label: 'Date Modified',  sub: [{ order: 'desc', label: 'Newest first' }, { order: 'asc', label: 'Oldest first' }] },
+      { key: 'size',     label: 'Size',           sub: [{ order: 'desc', label: 'Largest first' }, { order: 'asc', label: 'Smallest first' }] },
+      { key: 'ext',      label: 'Type',           sub: [{ order: 'asc', label: 'A → Z' }, { order: 'desc', label: 'Z → A' }] },
+    ];
+
+    sorts.forEach(s => {
+      s.sub.forEach(o => {
+        const isActive = currentSort === s.key && currentOrder === o.order;
+        const el = document.createElement('div');
+        el.className = 'cm-item' + (isActive ? ' cm-item-active' : '');
+        el.innerHTML = `
+          <span class="cm-icon">${isActive ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ''}</span>
+          <span class="cm-label">${s.label} — ${o.label}</span>
+        `;
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.hide();
+          FileList._sortBy    = s.key;
+          FileList._sortOrder = o.order;
+          Storage.set('sortBy',    s.key);
+          Storage.set('sortOrder', o.order);
+          FileList.render(FileList._files);
+        });
+        this._sub.appendChild(el);
+      });
+      /* Separator between sort groups */
+      const sep = document.createElement('div');
+      sep.className = 'cm-sep';
+      this._sub.appendChild(sep);
+    });
+
+    /* Remove last separator */
+    if (this._sub.lastChild?.className === 'cm-sep') this._sub.lastChild.remove();
+
+    this._sub.style.display = 'block';
+    this._positionSubmenu(anchorEl);
+  },
+
+  /* ── View submenu ── */
+  _showViewSubmenu(anchorEl, currentView) {
+    this._sub.innerHTML = '';
+
+    const views = [
+      { key: 'grid',    label: 'Grid',    icon: 'view' },
+      { key: 'list',    label: 'List',    icon: 'newfile' },
+      { key: 'details', label: 'Details', icon: 'sortby' },
+    ];
+
+    views.forEach(v => {
+      const isActive = currentView === v.key;
+      const el = document.createElement('div');
+      el.className = 'cm-item' + (isActive ? ' cm-item-active' : '');
+      el.innerHTML = `
+        <span class="cm-icon">${isActive ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ''}</span>
+        <span class="cm-label">${v.label}</span>
+      `;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.hide();
+        Events.emit('view:changed', v.key);
+        /* Also update header buttons */
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        const btnId = { grid: 'btn-view-grid', list: 'btn-view-list', details: 'btn-view-details' }[v.key];
+        if (btnId) document.getElementById(btnId)?.classList.add('active');
+      });
+      this._sub.appendChild(el);
+    });
+
+    this._sub.style.display = 'block';
+    this._positionSubmenu(anchorEl);
   },
 
   /* ── Position submenu next to anchor element ── */
@@ -348,13 +458,56 @@ const ContextMenu = {
   /* ── Open in Vortex internal player ── */
   _openInternal(file, type) {
     const files = FileList.getFiles();
-    if (type === 'video') {
-      VideoPreview.open(file, files);
-    } else if (type === 'image') {
-      ImagePreview.open(file, files);
-    } else if (type === 'pdf') {
-      IPC.invoke('pdf:openReader', file.path);
-    }
+    if (type === 'video') VideoPreview.open(file, files);
+    else if (type === 'image') ImagePreview.open(file, files);
+    else if (type === 'pdf') IPC.invoke('pdf:openReader', file.path);
+  },
+
+  /* ── Compress selected files to ZIP ── */
+  async _compressToZip(files) {
+    if (!files.length) return;
+    const tab      = TabManager.getActiveTab();
+    const baseName = files.length === 1 ? files[0].name : 'Archive';
+    const destPath = PathUtils.join(tab.path, baseName + '.zip');
+    const result   = await IPC.invoke('fs:compressToZip', files.map(f => f.path), destPath);
+    if (result.success) { Footer.showStatus('Compressed to ZIP', 'success'); Navigation.refresh(); }
+    else Footer.showStatus('Compress failed: ' + result.error, 'error');
+  },
+
+  /* ── Extract ZIP here ── */
+  async _extractHere(file) {
+    const destDir = PathUtils.getParent(file.path);
+    const result  = await IPC.invoke('fs:extractZip', file.path, destDir);
+    if (result.success) { Footer.showStatus('Extracted', 'success'); Navigation.refresh(); }
+    else Footer.showStatus('Extract failed: ' + result.error, 'error');
+  },
+
+  /* ── Extract ZIP to new folder ── */
+  async _extractToFolder(file) {
+    const baseName = file.name.replace(/\.[^.]+$/, '');
+    const destDir  = PathUtils.join(PathUtils.getParent(file.path), baseName);
+    await IPC.invoke('fs:mkdir', destDir);
+    const result   = await IPC.invoke('fs:extractZip', file.path, destDir);
+    if (result.success) { Footer.showStatus(`Extracted to: ${baseName}`, 'success'); Navigation.refresh(); }
+    else Footer.showStatus('Extract failed: ' + result.error, 'error');
+  },
+
+  /* ── Pin to Quick Access ── */
+  _pinToQuickAccess(file) {
+    const bookmarks = Storage.get('bookmarks') || [];
+    const exists    = bookmarks.find(b => b.path === file.path);
+    if (exists) { Footer.showStatus('Already in Quick Access', 'info'); return; }
+    bookmarks.push({ id: Date.now(), name: file.name, path: file.path });
+    Storage.set('bookmarks', bookmarks);
+    Sidebar.renderBookmarks(bookmarks);
+    Footer.showStatus(`Pinned: ${file.name}`, 'success');
+  },
+
+  /* ── Set as Desktop Wallpaper ── */
+  async _setWallpaper(file) {
+    const result = await IPC.invoke('shell:setWallpaper', file.path);
+    if (result.success) Footer.showStatus('Wallpaper set', 'success');
+    else Footer.showStatus('Failed to set wallpaper', 'error');
   },
 
   /* ── Actions ── */
