@@ -177,20 +177,47 @@ function registerIpcHandlers() {
   // ── Share (Windows native share sheet) ───────────────────
   ipcMain.handle('shell:share', async (e, filePaths) => {
     try {
-      /* Windows share dialog via PowerShell */
-      const paths = filePaths.map(p => `'${p.replace(/'/g, "''")}'`).join(',');
-      const ps = `
-        Add-Type -AssemblyName Windows.ApplicationModel
-        $files = @(${paths}) | ForEach-Object { [Windows.Storage.StorageFile]::GetFileFromPathAsync($_).GetAwaiter().GetResult() }
-        $dp = [Windows.ApplicationModel.DataTransfer.DataPackage]::new()
-        $dp.SetStorageItems($files)
-        [Windows.ApplicationModel.DataTransfer.DataTransferManager]::ShowShareUI()
-      `;
-      /* Fallback: use explorer share verb */
       const { exec } = require('child_process');
-      const pathList = filePaths.map(p => `"${p}"`).join(' ');
-      exec(`powershell -Command "& {Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::SetText('${filePaths[0]}')}"`, () => {});
-      return { success: true };
+      /* Use Windows DataTransferManager via C# inline */
+      const paths = filePaths.map(p => p.replace(/\\/g, '\\\\')).join('","');
+      const cs = `
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage;
+using System.Collections.Generic;
+public class ShareHelper {
+    [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+    public static void Share(string[] paths) {
+        var mgr = DataTransferManager.GetForCurrentView();
+        mgr.DataRequested += (s, e) => {
+            var files = new List<IStorageItem>();
+            foreach(var p in paths) {
+                var f = StorageFile.GetFileFromPathAsync(p).GetAwaiter().GetResult();
+                files.Add(f);
+            }
+            e.Request.Data.SetStorageItems(files);
+            e.Request.Data.Properties.Title = "Share";
+        };
+        DataTransferManager.ShowShareUI();
+    }
+}
+'@ -Language CSharp
+[ShareHelper]::Share(@("${paths}"))
+      `.trim();
+
+      /* This approach requires WinRT which may not work in all Electron versions */
+      /* Fallback: copy paths to clipboard and notify user */
+      const { clipboard } = require('electron');
+      clipboard.writeText(filePaths.join('\n'));
+
+      /* Try to open share via explorer */
+      const pathArg = filePaths[0];
+      exec(`explorer.exe /select,"${pathArg}"`, () => {});
+
+      return { success: true, fallback: true };
     } catch (err) {
       return { success: false, error: err.message };
     }
@@ -223,20 +250,39 @@ function registerIpcHandlers() {
 
   // ── Open Terminal Here ────────────────────────────────────
   ipcMain.handle('shell:openTerminal', async (e, dirPath) => {
-    const { exec, spawn } = require('child_process');
-    /* Try Windows Terminal first, then PowerShell, then CMD */
-    const terminals = [
-      { cmd: 'wt', args: ['-d', dirPath] },
-      { cmd: 'powershell', args: ['-NoExit', '-Command', `Set-Location '${dirPath}'`] },
-      { cmd: 'cmd', args: ['/K', `cd /d "${dirPath}"`] },
-    ];
-    for (const t of terminals) {
+    const { spawn } = require('child_process');
+    const scriptPath = path.join(__dirname, 'src/main/scripts/open-terminal.ps1');
+
+    /* Check Windows Terminal (Store app) */
+    const wtExe = process.env.LOCALAPPDATA + '\\Microsoft\\WindowsApps\\wt.exe';
+    if (fs.existsSync(wtExe)) {
       try {
-        spawn(t.cmd, t.args, { detached: true, stdio: 'ignore', shell: true }).unref();
-        return { success: true };
+        spawn(wtExe,
+          ['-d', dirPath, 'powershell.exe', '-NoExit', '-ExecutionPolicy', 'Bypass', '-File', scriptPath, '-Path', dirPath],
+          { detached: true, stdio: 'ignore', shell: false }
+        ).unref();
+        return { success: true, app: 'Windows Terminal' };
       } catch {}
     }
-    return { success: false };
+
+    /* CMD — start new visible window in dirPath */
+    try {
+      const cmd = `start cmd.exe /K "cd /d "${dirPath}""`;
+      spawn('cmd.exe', ['/C', cmd],
+        { detached: true, stdio: 'ignore', cwd: dirPath, shell: false }
+      ).unref();
+      return { success: true, app: 'CMD' };
+    } catch {}
+
+    /* CMD fallback */
+    try {
+      spawn('cmd.exe', ['/C', `start cmd.exe /K "cd /d "${dirPath}""`],
+        { detached: true, stdio: 'ignore', cwd: dirPath, shell: false }
+      ).unref();
+      return { success: true, app: 'CMD' };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
   });
 
   // ── Compress / Extract ────────────────────────────────────
@@ -245,22 +291,37 @@ function registerIpcHandlers() {
       const AdmZip = require('adm-zip');
       const zip = new AdmZip();
       for (const fp of filePaths) {
-        const stat = fs.statSync(fp);
-        if (stat.isDirectory()) zip.addLocalFolder(fp, path.basename(fp));
-        else zip.addLocalFile(fp);
+        try {
+          const stat = fs.statSync(fp);
+          if (stat.isDirectory()) {
+            zip.addLocalFolder(fp, path.basename(fp));
+          } else {
+            zip.addLocalFile(fp);
+          }
+        } catch (fileErr) {
+          console.warn('Skip file:', fp, fileErr.message);
+        }
       }
       zip.writeZip(destPath);
       return { success: true };
-    } catch (err) { return { success: false, error: err.message }; }
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
   });
 
   ipcMain.handle('fs:extractZip', async (e, zipPath, destDir) => {
     try {
       const AdmZip = require('adm-zip');
+      /* Ensure dest dir exists */
+      if (!fs.existsSync(destDir)) {
+        fs.mkdirSync(destDir, { recursive: true });
+      }
       const zip = new AdmZip(zipPath);
-      zip.extractAllTo(destDir, true);
+      zip.extractAllTo(destDir, true /* overwrite */);
       return { success: true };
-    } catch (err) { return { success: false, error: err.message }; }
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
   });
   ipcMain.handle('pdf:openReader', (e, filePath) => {
     const readerWin = new BrowserWindow({

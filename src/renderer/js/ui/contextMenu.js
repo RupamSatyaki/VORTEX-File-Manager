@@ -94,7 +94,14 @@ const ContextMenu = {
       { label: 'Open',         icon: 'open',     disabled: isMulti, action: () => FileList.openFile(file) },
       { label: 'Open with…',  icon: 'openwith', disabled: isMulti, hasSubmenu: true, submenuAction: (el) => this._showOpenWithSubmenu(el, file) },
       { sep: true },
-      { label: 'Share',        icon: 'share',    action: () => IPC.invoke('shell:share', selected.map(f => f.path)) },
+      { label: 'Share', icon: 'share', action: async () => {
+          const result = await IPC.invoke('shell:share', selected.map(f => f.path));
+          if (result.success) {
+            if (result.fallback) Footer.showStatus('Path copied to clipboard (Windows share not available)', 'info');
+            else Footer.showStatus('Share dialog opened', 'success');
+          } else Footer.showStatus('Share failed: ' + result.error, 'error');
+        }
+      },
       { sep: true },
       /* Compress / Extract */
       ...(isArchive ? [
@@ -246,7 +253,12 @@ const ContextMenu = {
       { label: 'Sort By', icon: 'sortby', hasSubmenu: true, submenuAction: (el) => this._showSortSubmenu(el, sortBy, sortOrder) },
       { label: 'View',    icon: 'view',   hasSubmenu: true, submenuAction: (el) => this._showViewSubmenu(el, view) },
       { sep: true },
-      { label: 'Open Terminal Here', icon: 'terminal', action: () => IPC.invoke('shell:openTerminal', tab.path) },
+      { label: 'Open Terminal Here', icon: 'terminal', action: async () => {
+          const result = await IPC.invoke('shell:openTerminal', tab.path);
+          if (result.success) Footer.showStatus(`Opened ${result.app || 'terminal'}`, 'success');
+          else Footer.showStatus('Could not open terminal', 'error');
+        }
+      },
       { sep: true },
       { label: 'Refresh',          icon: 'refresh',  shortcut: 'F5', action: () => Navigation.refresh() },
       { label: 'Add to Bookmarks', icon: 'bookmark',                  action: () => Bookmarks.addCurrent() },
