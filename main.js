@@ -1,10 +1,11 @@
 const { app, BrowserWindow, ipcMain, shell, dialog, protocol, net } = require('electron');
-const path        = require('path');
-const fs          = require('fs');
-const os          = require('os');
-const mtpHelper   = require('./src/main/mtpHelper');
-const mediaServer = require('./src/main/mediaServer');
+const path              = require('path');
+const fs                = require('fs');
+const os                = require('os');
+const mtpHelper         = require('./src/main/mtpHelper');
+const mediaServer       = require('./src/main/mediaServer');
 const { probeDuration } = require('./src/main/mediaDuration');
+const videoPlayerWindow = require('./src/main/videoPlayerWindow');
 
 let mainWindow;
 const isDev = process.argv.includes('--dev');
@@ -151,6 +152,7 @@ app.whenReady().then(async () => {
 
   createWindow();
   registerIpcHandlers();
+  videoPlayerWindow.register(isDev);
 });
 app.on('window-all-closed', () => {
   mediaServer.stop();

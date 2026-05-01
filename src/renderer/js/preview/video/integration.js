@@ -7,7 +7,7 @@ const VideoPreviewIntegration = {
     console.log('🔗 VideoPreviewIntegration initialized');
   },
 
-  /* Double-click on video file → open preview */
+  /* Double-click on video file → open in Video Player window */
   _setupDoubleClick() {
     document.addEventListener('dblclick', (e) => {
       const item = e.target.closest('.file-item-grid, .file-item-list, .details-row');
@@ -23,11 +23,19 @@ const VideoPreviewIntegration = {
 
       e.preventDefault();
       e.stopPropagation();
-      VideoPreview.open(file, files);
+
+      /* Build playlist from all videos in folder */
+      const VIDEO_EXTS = ['mp4','mkv','avi','mov','wmv','flv','m4v','ogv','webm','3gp'];
+      const playlist = files
+        .filter(f => !f.isDirectory && VIDEO_EXTS.includes((f.ext||'').toLowerCase()))
+        .map(f => ({ path: f.path, name: f.name, ext: f.ext || '' }));
+      const idx = playlist.findIndex(p => p.path === filePath);
+
+      IPC.invoke('video:openPlayer', filePath, playlist, Math.max(0, idx));
     });
   },
 
-  /* Space key on selected video → open preview */
+  /* Space key on selected video → open player window */
   _setupSpaceKey() {
     document.addEventListener('keydown', (e) => {
       if (VideoPreview.isOpen()) return;
@@ -40,7 +48,12 @@ const VideoPreviewIntegration = {
 
       e.preventDefault();
       const files = FileList.getFiles();
-      VideoPreview.open(selected[0], files);
+      const VIDEO_EXTS = ['mp4','mkv','avi','mov','wmv','flv','m4v','ogv','webm','3gp'];
+      const playlist = files
+        .filter(f => !f.isDirectory && VIDEO_EXTS.includes((f.ext||'').toLowerCase()))
+        .map(f => ({ path: f.path, name: f.name, ext: f.ext || '' }));
+      const idx = playlist.findIndex(p => p.path === selected[0].path);
+      IPC.invoke('video:openPlayer', selected[0].path, playlist, Math.max(0, idx));
     });
   },
 

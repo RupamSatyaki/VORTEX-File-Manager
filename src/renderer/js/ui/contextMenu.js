@@ -100,10 +100,12 @@ const ContextMenu = {
       ]);
       return;
     }
+    const isVideo   = ['mp4','mkv','avi','mov','wmv','flv','m4v','ogv','webm','3gp'].includes((file.ext||'').toLowerCase());
 
     const items = [
       { label: 'Open',         icon: 'open',     disabled: isMulti, action: () => FileList.openFile(file) },
       { label: 'Open with…',  icon: 'openwith', disabled: isMulti, hasSubmenu: true, submenuAction: (el) => this._showOpenWithSubmenu(el, file) },
+      ...(isVideo && !isMulti ? [{ label: 'Open in Player', icon: 'vortex', action: () => this._openInVideoPlayer(file) }] : []),
       { sep: true },
       { label: 'Share', icon: 'share', action: async () => {
           const result = await IPC.invoke('shell:share', selected.map(f => f.path));
@@ -582,7 +584,18 @@ const ContextMenu = {
     });
   },
 
-  /* ── Open in Vortex internal player ── */
+  /* ── Open in Vortex Video Player window ── */
+  _openInVideoPlayer(file) {
+    const allFiles = FileList.getFiles();
+    const VIDEO_EXTS = ['mp4','mkv','avi','mov','wmv','flv','m4v','ogv','webm','3gp'];
+    const playlist = allFiles
+      .filter(f => !f.isDirectory && VIDEO_EXTS.includes((f.ext||'').toLowerCase()))
+      .map(f => ({ path: f.path, name: f.name, ext: f.ext || '' }));
+    const idx = playlist.findIndex(p => p.path === file.path);
+    IPC.invoke('video:openPlayer', file.path, playlist, Math.max(0, idx));
+  },
+
+  /* ── Open in Vortex internal player (preview panel) ── */
   _openInternal(file, type) {
     const files = FileList.getFiles();
     if (type === 'video') VideoPreview.open(file, files);

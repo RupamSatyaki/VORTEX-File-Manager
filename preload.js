@@ -1,61 +1,68 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('vortexAPI', {
-  // Window
+  // ── Window (main) ──────────────────────────────────────
   minimize: () => ipcRenderer.send('window:minimize'),
   maximize: () => ipcRenderer.send('window:maximize'),
-  close: () => ipcRenderer.send('window:close'),
+  close:    () => ipcRenderer.send('window:close'),
 
-  // File system
-  readDir: (path) => ipcRenderer.invoke('fs:readDir', path),
-  getDrives: () => ipcRenderer.invoke('fs:getDrives'),
-  mkdir: (path) => ipcRenderer.invoke('fs:mkdir', path),
-  createFile: (path) => ipcRenderer.invoke('fs:createFile', path),
-  rename: (oldPath, newPath) => ipcRenderer.invoke('fs:rename', oldPath, newPath),
-  delete: (path) => ipcRenderer.invoke('fs:delete', path),
-  copy: (src, dest) => ipcRenderer.invoke('fs:copy', src, dest),
-  move: (src, dest) => ipcRenderer.invoke('fs:move', src, dest),
-  exists: (path) => ipcRenderer.invoke('fs:exists', path),
-  stat: (path) => ipcRenderer.invoke('fs:stat', path),
-  search: (dirPath, query) => ipcRenderer.invoke('fs:search', dirPath, query),
-  getHomePath: () => ipcRenderer.invoke('fs:getHomePath'),
-  getSpecialPath: (name) => ipcRenderer.invoke('fs:getSpecialPath', name),
-  readFile: (path) => ipcRenderer.invoke('fs:readFile', path),
+  // ── File system ────────────────────────────────────────
+  readDir:       (path)           => ipcRenderer.invoke('fs:readDir', path),
+  getDrives:     ()               => ipcRenderer.invoke('fs:getDrives'),
+  mkdir:         (path)           => ipcRenderer.invoke('fs:mkdir', path),
+  createFile:    (path)           => ipcRenderer.invoke('fs:createFile', path),
+  rename:        (o, n)           => ipcRenderer.invoke('fs:rename', o, n),
+  delete:        (path)           => ipcRenderer.invoke('fs:delete', path),
+  copy:          (src, dest)      => ipcRenderer.invoke('fs:copy', src, dest),
+  move:          (src, dest)      => ipcRenderer.invoke('fs:move', src, dest),
+  exists:        (path)           => ipcRenderer.invoke('fs:exists', path),
+  stat:          (path)           => ipcRenderer.invoke('fs:stat', path),
+  search:        (dir, q)         => ipcRenderer.invoke('fs:search', dir, q),
+  getHomePath:   ()               => ipcRenderer.invoke('fs:getHomePath'),
+  getSpecialPath:(name)           => ipcRenderer.invoke('fs:getSpecialPath', name),
+  readFile:      (path)           => ipcRenderer.invoke('fs:readFile', path),
+  compressToZip: (files, dest)    => ipcRenderer.invoke('fs:compressToZip', files, dest),
+  extractZip:    (zip, dest)      => ipcRenderer.invoke('fs:extractZip', zip, dest),
 
-  // Shell
-  openPath:         (path) => ipcRenderer.invoke('shell:openPath', path),
-  showInFolder:     (path) => ipcRenderer.send('shell:showInFolder', path),
-  openExternal:     (url)  => ipcRenderer.send('shell:openExternal', url),
-  getAppsForExt:    (ext)  => ipcRenderer.invoke('shell:getAppsForExt', ext),
-  openWith:         (filePath, app) => ipcRenderer.invoke('shell:openWith', filePath, app),
-  share:            (paths) => ipcRenderer.invoke('shell:share', paths),
-  setWallpaper:     (p)    => ipcRenderer.invoke('shell:setWallpaper', p),
-  openTerminal:     (dir)  => ipcRenderer.invoke('shell:openTerminal', dir),
-  compressToZip:    (files, dest) => ipcRenderer.invoke('fs:compressToZip', files, dest),
-  extractZip:       (zip, dest)   => ipcRenderer.invoke('fs:extractZip', zip, dest),
+  // ── Shell ──────────────────────────────────────────────
+  openPath:      (path)           => ipcRenderer.invoke('shell:openPath', path),
+  showInFolder:  (path)           => ipcRenderer.send('shell:showInFolder', path),
+  openExternal:  (url)            => ipcRenderer.send('shell:openExternal', url),
+  getAppsForExt: (ext)            => ipcRenderer.invoke('shell:getAppsForExt', ext),
+  openWith:      (filePath, app)  => ipcRenderer.invoke('shell:openWith', filePath, app),
+  share:         (paths)          => ipcRenderer.invoke('shell:share', paths),
+  setWallpaper:  (p)              => ipcRenderer.invoke('shell:setWallpaper', p),
+  openTerminal:  (dir)            => ipcRenderer.invoke('shell:openTerminal', dir),
 
-  // Storage
-  storageRead: (key) => ipcRenderer.invoke('storage:read', key),
-  storageWrite: (key, data) => ipcRenderer.invoke('storage:write', key, data),
+  // ── Storage ────────────────────────────────────────────
+  storageRead:   (key)            => ipcRenderer.invoke('storage:read', key),
+  storageWrite:  (key, data)      => ipcRenderer.invoke('storage:write', key, data),
 
-  // Dialog
-  openFolderDialog: () => ipcRenderer.invoke('dialog:openFolder'),
-  
-  // Drive monitoring
-  onDrivesChanged: (callback) => {
-    ipcRenderer.on('drives:changed', (event, data) => callback(data));
-  },
+  // ── Dialog ─────────────────────────────────────────────
+  openFolderDialog: ()            => ipcRenderer.invoke('dialog:openFolder'),
 
-  // Media server
-  getMediaPort:         () => ipcRenderer.invoke('media:getPort'),
-  getMediaProgress:     (p) => ipcRenderer.invoke('media:getProgress', p),
-  getTranscodeInfo:     (p) => ipcRenderer.invoke('media:getTranscodeInfo', p),
-  getMediaDuration:     (p) => ipcRenderer.invoke('media:getDuration', p),
+  // ── Drive monitoring ───────────────────────────────────
+  onDrivesChanged: (cb) => ipcRenderer.on('drives:changed', (e, d) => cb(d)),
 
-  // Recycle Bin
-  recycleBinRestore: (p) => ipcRenderer.invoke('recyclebin:restore', p),
-  recycleBinEmpty:   ()  => ipcRenderer.invoke('recyclebin:empty'),
-  pdfMinimize:          ()  => ipcRenderer.send('pdf:minimize'),
-  pdfMaximize:          ()  => ipcRenderer.send('pdf:maximize'),
-  pdfClose:             ()  => ipcRenderer.send('pdf:close'),
+  // ── Media server ───────────────────────────────────────
+  getMediaPort:      ()           => ipcRenderer.invoke('media:getPort'),
+  getMediaProgress:  (p)          => ipcRenderer.invoke('media:getProgress', p),
+  getTranscodeInfo:  (p)          => ipcRenderer.invoke('media:getTranscodeInfo', p),
+  getMediaDuration:  (p)          => ipcRenderer.invoke('media:getDuration', p),
+
+  // ── PDF Reader window ──────────────────────────────────
+  openPdfReader: (p)              => ipcRenderer.invoke('pdf:openReader', p),
+  pdfMinimize:   ()               => ipcRenderer.send('pdf:minimize'),
+  pdfMaximize:   ()               => ipcRenderer.send('pdf:maximize'),
+  pdfClose:      ()               => ipcRenderer.send('pdf:close'),
+
+  // ── Video Player window ────────────────────────────────
+  openVideoPlayer: (path, pl, idx) => ipcRenderer.invoke('video:openPlayer', path, pl, idx),
+  videoMinimize:   ()             => ipcRenderer.send('video:minimize'),
+  videoMaximize:   ()             => ipcRenderer.send('video:maximize'),
+  videoClose:      ()             => ipcRenderer.send('video:close'),
+
+  // ── Recycle Bin ────────────────────────────────────────
+  recycleBinRestore: (p)          => ipcRenderer.invoke('recyclebin:restore', p),
+  recycleBinEmpty:   ()           => ipcRenderer.invoke('recyclebin:empty'),
 });
