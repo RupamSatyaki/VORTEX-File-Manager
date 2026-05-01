@@ -497,14 +497,31 @@ public class ShareHelper {
   });
 
   ipcMain.handle('fs:delete', async (e, filePath) => {
-    try { await shell.trashItem(filePath); return { success: true }; }
-    catch {
-      try {
-        const stat = await fs.promises.stat(filePath);
-        if (stat.isDirectory()) await fs.promises.rm(filePath, { recursive: true, force: true });
-        else await fs.promises.unlink(filePath);
-        return { success: true };
-      } catch (err2) { return { success: false, error: err2.message }; }
+    /* Always try to send to Recycle Bin first */
+    try {
+      await shell.trashItem(filePath);
+      return { success: true };
+    } catch {}
+
+    /* Fallback: PowerShell Send to Recycle Bin */
+    try {
+      const { exec } = require('child_process');
+      const ps = `Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('${filePath.replace(/'/g,"''")}', 'OnlyErrorDialogs', 'SendToRecycleBin')`;
+      await new Promise((resolve, reject) => {
+        exec(`powershell -WindowStyle Hidden -Command "${ps.replace(/"/g,'\\"')}"`,
+          { timeout: 5000 }, (err) => err ? reject(err) : resolve());
+      });
+      return { success: true };
+    } catch {}
+
+    /* Last resort: permanent delete (only if recycle bin fails) */
+    try {
+      const stat = await fs.promises.stat(filePath);
+      if (stat.isDirectory()) await fs.promises.rm(filePath, { recursive: true, force: true });
+      else await fs.promises.unlink(filePath);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
     }
   });
 
