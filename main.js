@@ -372,15 +372,28 @@ public class ShareHelper {
   // ── Paths ────────────────────────────────────────────────
   ipcMain.handle('fs:getHomePath', () => os.homedir());
   ipcMain.handle('fs:getSpecialPath', (e, name) => {
-    const m = { home: os.homedir(), desktop: path.join(os.homedir(),'Desktop'), downloads: path.join(os.homedir(),'Downloads'), documents: path.join(os.homedir(),'Documents'), pictures: path.join(os.homedir(),'Pictures'), music: path.join(os.homedir(),'Music'), videos: path.join(os.homedir(),'Videos') };
+    const m = {
+      home:       os.homedir(),
+      desktop:    path.join(os.homedir(),'Desktop'),
+      downloads:  path.join(os.homedir(),'Downloads'),
+      documents:  path.join(os.homedir(),'Documents'),
+      pictures:   path.join(os.homedir(),'Pictures'),
+      music:      path.join(os.homedir(),'Music'),
+      videos:     path.join(os.homedir(),'Videos'),
+      recyclebin: 'recyclebin://',
+    };
     return m[name] || os.homedir();
   });
 
   // ── Read directory ───────────────────────────────────────
   ipcMain.handle('fs:readDir', async (e, dirPath) => {
-    // Check if it's a portable device path (starts with Computer\)
+    /* Recycle Bin */
+    if (dirPath === 'recyclebin://') {
+      return readRecycleBin();
+    }
+
+    /* Portable device */
     if (dirPath.startsWith('Computer\\')) {
-      console.log('📱 Reading portable device:', dirPath);
       return await mtpHelper.readDir(dirPath);
     }
     
@@ -571,11 +584,84 @@ public class ShareHelper {
     catch (err) { return { success: false, error: err.message }; }
   });
 
-  // ── Dialog ───────────────────────────────────────────────
+  // ── Recycle Bin operations ───────────────────────────────
+  ipcMain.handle('recyclebin:restore', async (e, itemPath) => {
+    try {
+      const { exec } = require('child_process');
+      const scriptPath = path.join(__dirname, 'src/main/scripts/restore-recyclebin.ps1');
+      await new Promise((resolve) => {
+        exec(`powershell -ExecutionPolicy Bypass -File "${scriptPath}" -ItemPath "${itemPath.replace(/"/g, '`"')}"`,
+          { timeout: 5000 }, resolve);
+      });
+      return { success: true };
+    } catch (err) { return { success: false, error: err.message }; }
+  });
+
+  ipcMain.handle('recyclebin:empty', async () => {
+    try {
+      const { exec } = require('child_process');
+      const scriptPath = path.join(__dirname, 'src/main/scripts/empty-recyclebin.ps1');
+      await new Promise((resolve) => {
+        exec(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`,
+          { timeout: 10000 }, resolve);
+      });
+      return { success: true };
+    } catch (err) { return { success: false, error: err.message }; }
+  });
   ipcMain.handle('dialog:openFolder', async () => {
     const r = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] });
     return r.canceled ? null : r.filePaths[0];
   });
+}
+
+/* ── Read Windows Recycle Bin ── */
+async function readRecycleBin() {
+  try {
+    const { exec } = require('child_process');
+    const scriptPath = path.join(__dirname, 'src/main/scripts/get-recyclebin.ps1');
+
+    const stdout = await new Promise((resolve, reject) => {
+      exec(
+        `powershell -ExecutionPolicy Bypass -File "${scriptPath}"`,
+        { timeout: 10000, maxBuffer: 10 * 1024 * 1024 },
+        (err, out, stderr) => {
+          if (err) { reject(err); return; }
+          resolve(out || '');
+        }
+      );
+    });
+
+    const trimmed = stdout.trim();
+    if (!trimmed) return { success: true, files: [] };
+
+    let data;
+    try {
+      data = JSON.parse(trimmed);
+    } catch {
+      return { success: true, files: [] };
+    }
+
+    const items = Array.isArray(data) ? data : [data];
+
+    const files = items
+      .filter(item => item && item.Name)
+      .map(item => ({
+        name:         item.Name || 'Unknown',
+        path:         item.Path || '',
+        isDirectory:  !!item.IsFolder,
+        size:         parseInt(item.Size) || 0,
+        modified:     item.Date ? Date.now() : 0,
+        created:      0,
+        ext:          item.IsFolder ? '' : path.extname(item.Name || '').toLowerCase().slice(1),
+        originalPath: (item.OrigPath || '').trim(),
+        inRecycleBin: true,
+      }));
+
+    return { success: true, files };
+  } catch (err) {
+    console.error('readRecycleBin error:', err.message);
+    return { success: false, error: err.message, files: [] };
+  }
 }
 
 async function copyRecursive(src, dest) {

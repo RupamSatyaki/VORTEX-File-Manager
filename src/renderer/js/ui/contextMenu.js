@@ -90,6 +90,17 @@ const ContextMenu = {
     const isArchive = ['zip','rar','7z','tar','gz','bz2'].includes((file.ext||'').toLowerCase());
     const tab       = TabManager.getActiveTab();
 
+    /* ── Recycle Bin items ── */
+    if (tab?.path === 'recyclebin://') {
+      this.show(x, y, [
+        { label: 'Restore',           icon: 'refresh', action: () => this._restoreFromBin(selected) },
+        { sep: true },
+        { label: isMulti ? `Delete ${selected.length} items permanently` : 'Delete Permanently',
+          icon: 'delete', danger: true, action: () => this._deletePermanently(selected) },
+      ]);
+      return;
+    }
+
     const items = [
       { label: 'Open',         icon: 'open',     disabled: isMulti, action: () => FileList.openFile(file) },
       { label: 'Open with…',  icon: 'openwith', disabled: isMulti, hasSubmenu: true, submenuAction: (el) => this._showOpenWithSubmenu(el, file) },
@@ -240,6 +251,23 @@ const ContextMenu = {
   showForBackground(x, y) {
     const tab = TabManager.getActiveTab();
     if (!tab?.path) return;
+
+    /* Recycle Bin background menu */
+    if (tab.path === 'recyclebin://') {
+      this.show(x, y, [
+        { label: 'Empty Recycle Bin', icon: 'delete', danger: true, action: async () => {
+            const ok = await Dialogs.confirm('Empty Recycle Bin', 'Permanently delete all items in Recycle Bin?');
+            if (!ok) return;
+            const result = await IPC.invoke('recyclebin:empty');
+            if (result.success) { Footer.showStatus('Recycle Bin emptied', 'success'); Navigation.refresh(); }
+            else Footer.showStatus('Failed to empty Recycle Bin', 'error');
+          }
+        },
+        { sep: true },
+        { label: 'Refresh', icon: 'refresh', shortcut: 'F5', action: () => Navigation.refresh() },
+      ]);
+      return;
+    }
 
     const sortBy    = FileList._sortBy    || 'name';
     const sortOrder = FileList._sortOrder || 'asc';
@@ -465,6 +493,26 @@ const ContextMenu = {
   hide() {
     if (this._el)  this._el.style.display  = 'none';
     if (this._sub) this._sub.style.display = 'none';
+  },
+
+  /* ── Restore from Recycle Bin ── */
+  async _restoreFromBin(files) {
+    for (const f of files) {
+      await IPC.invoke('recyclebin:restore', f.path);
+    }
+    Navigation.refresh();
+    Footer.showStatus(`Restored ${files.length} item${files.length !== 1 ? 's' : ''}`, 'success');
+  },
+
+  /* ── Delete permanently from Recycle Bin ── */
+  async _deletePermanently(files) {
+    Dialogs.showDeleteConfirm(files, async () => {
+      for (const f of files) {
+        await IPC.invoke('fs:delete', f.path);
+      }
+      Navigation.refresh();
+      Footer.showStatus(`Permanently deleted ${files.length} item${files.length !== 1 ? 's' : ''}`, 'success');
+    });
   },
 
   /* ── Open in Vortex internal player ── */

@@ -59,8 +59,9 @@ const Navigation = {
     let label = PathUtils.getBasename(targetPath) || targetPath;
     if (targetPath === 'thispc://') {
       label = 'This PC';
+    } else if (targetPath === 'recyclebin://') {
+      label = 'Recycle Bin';
     } else if (targetPath.startsWith('Computer\\')) {
-      // Extract device name for portable devices
       label = targetPath.replace('Computer\\', '').split('\\')[0];
     }
     

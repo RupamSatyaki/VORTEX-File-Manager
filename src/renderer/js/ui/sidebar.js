@@ -32,6 +32,11 @@ const Sidebar = {
     document.querySelectorAll('.sidebar-item[data-special]').forEach(item => {
       item.addEventListener('click', async () => {
         const name = item.dataset.special;
+        if (name === 'recyclebin') {
+          Navigation.navigateTo('recyclebin://');
+          this.setActive(item);
+          return;
+        }
         const fullPath = await IPC.invoke('fs:getSpecialPath', name);
         Navigation.navigateTo(fullPath);
         this.setActive(item);

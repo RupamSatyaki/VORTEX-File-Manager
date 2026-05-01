@@ -32,6 +32,8 @@ const IPC = {
       'media:getTranscodeInfo':(p) => window.vortexAPI.getTranscodeInfo(p),
       'media:getDuration':     (p) => window.vortexAPI.getMediaDuration(p),
       'pdf:openReader':        (p) => window.vortexAPI.openPdfReader(p),
+      'recyclebin:restore':    (p) => window.vortexAPI.recycleBinRestore(p),
+      'recyclebin:empty':      ()  => window.vortexAPI.recycleBinEmpty(),
     };
     const fn = map[channel];
     if (fn) return fn(...args);
