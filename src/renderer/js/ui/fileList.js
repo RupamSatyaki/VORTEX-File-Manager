@@ -293,6 +293,12 @@ const FileList = {
   },
 
   openFile(file) {
+    /* Recycle Bin — don't open, show restore/delete panel */
+    const tab = TabManager.getActiveTab();
+    if (tab?.path === 'recyclebin://') {
+      ContextMenu.showRecycleBinPanel(file);
+      return;
+    }
     if (file.isDirectory) Navigation.navigateTo(file.path);
     else IPC.invoke('shell:openPath', file.path);
   },

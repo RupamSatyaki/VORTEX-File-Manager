@@ -66,3 +66,109 @@
 /* Active/checked item in submenu */
 .cm-item-active { color: var(--accent); }
 .cm-item-active:hover { background: var(--accent-dim); }
+
+/* ── Recycle Bin item panel ── */
+.rb-panel {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  width: 420px;
+  background: var(--bg-dropdown);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  z-index: 500;
+  opacity: 0;
+  transition: opacity 200ms ease, transform 200ms ease;
+  overflow: hidden;
+}
+.rb-panel-open {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.rb-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rb-panel-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-md);
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2);
+  display: flex; align-items: center; justify-content: center;
+  color: #ef4444;
+  flex-shrink: 0;
+}
+
+.rb-panel-info { flex: 1; min-width: 0; }
+
+.rb-panel-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rb-panel-meta {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rb-panel-close {
+  width: 24px; height: 24px;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 150ms ease, color 150ms ease;
+  flex-shrink: 0;
+}
+.rb-panel-close:hover { background: rgba(239,68,68,0.12); color: #ef4444; }
+
+.rb-panel-actions {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.rb-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.rb-btn-restore {
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.3);
+  color: #60a5fa;
+}
+.rb-btn-restore:hover { background: rgba(59,130,246,0.25); }
+
+.rb-btn-delete {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.25);
+  color: #f87171;
+}
+.rb-btn-delete:hover { background: rgba(239,68,68,0.2); }

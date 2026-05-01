@@ -495,6 +495,73 @@ const ContextMenu = {
     if (this._sub) this._sub.style.display = 'none';
   },
 
+  /* ── Recycle Bin item panel (shown on double click) ── */
+  showRecycleBinPanel(file) {
+    /* Remove existing panel */
+    document.getElementById('rb-panel')?.remove();
+
+    const panel = document.createElement('div');
+    panel.id        = 'rb-panel';
+    panel.className = 'rb-panel';
+    panel.innerHTML = `
+      <div class="rb-panel-header">
+        <div class="rb-panel-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </div>
+        <div class="rb-panel-info">
+          <div class="rb-panel-name" title="${this._esc(file.name)}">${this._esc(file.name)}</div>
+          <div class="rb-panel-meta">${file.originalPath ? 'From: ' + this._esc(file.originalPath) : ''}</div>
+        </div>
+        <button class="rb-panel-close" id="rb-panel-close">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="rb-panel-actions">
+        <button class="rb-btn rb-btn-restore" id="rb-restore">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+          Restore
+        </button>
+        <button class="rb-btn rb-btn-delete" id="rb-delete-perm">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Delete Permanently
+        </button>
+      </div>
+    `;
+
+    document.getElementById('file-list-container').appendChild(panel);
+
+    /* Animate in */
+    requestAnimationFrame(() => panel.classList.add('rb-panel-open'));
+
+    /* Close */
+    panel.querySelector('#rb-panel-close').addEventListener('click', () => {
+      panel.classList.remove('rb-panel-open');
+      setTimeout(() => panel.remove(), 250);
+    });
+
+    /* Restore */
+    panel.querySelector('#rb-restore').addEventListener('click', async () => {
+      panel.remove();
+      await IPC.invoke('recyclebin:restore', file.path);
+      Navigation.refresh();
+      Footer.showStatus(`Restored: ${file.name}`, 'success');
+    });
+
+    /* Delete Permanently */
+    panel.querySelector('#rb-delete-perm').addEventListener('click', async () => {
+      panel.remove();
+      const ok = await Dialogs.confirm('Delete Permanently', `Permanently delete "${file.name}"?`);
+      if (!ok) return;
+      await IPC.invoke('fs:delete', file.path);
+      Navigation.refresh();
+      Footer.showStatus(`Deleted: ${file.name}`, 'success');
+    });
+  },
+
+  _esc(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  },
+
   /* ── Restore from Recycle Bin ── */
   async _restoreFromBin(files) {
     for (const f of files) {

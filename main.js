@@ -662,17 +662,23 @@ async function readRecycleBin() {
 
     const files = items
       .filter(item => item && item.Name)
-      .map(item => ({
-        name:         item.Name || 'Unknown',
-        path:         item.Path || '',
-        isDirectory:  !!item.IsFolder,
-        size:         parseInt(item.Size) || 0,
-        modified:     item.Date ? Date.now() : 0,
-        created:      0,
-        ext:          item.IsFolder ? '' : path.extname(item.Name || '').toLowerCase().slice(1),
-        originalPath: (item.OrigPath || '').trim(),
-        inRecycleBin: true,
-      }));
+      .map(item => {
+        const name = item.Name || 'Unknown';
+        const ext  = path.extname(name).toLowerCase().slice(1);
+        /* Detect folder by no extension AND IsFolder flag */
+        const isDir = !!item.IsFolder && !ext;
+        return {
+          name,
+          path:         item.Path || '',
+          isDirectory:  isDir,
+          size:         parseInt(item.Size) || 0,
+          modified:     Date.now(),
+          created:      0,
+          ext:          isDir ? '' : ext,
+          originalPath: (item.OrigPath || '').trim(),
+          inRecycleBin: true,
+        };
+      });
 
     return { success: true, files };
   } catch (err) {
