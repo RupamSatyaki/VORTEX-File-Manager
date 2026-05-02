@@ -55,7 +55,27 @@
           ]
         }
       ],
-      "icon": "src/assets/icons/app-icon.png"
+      "icon": "src/assets/icons/app-icon.png",
+      "fileAssociations": [
+        {
+          "ext": ["mp4", "mkv", "avi", "mov", "wmv", "webm", "m4v", "flv", "ogv", "3gp"],
+          "name": "Video File",
+          "description": "Play with Vortex Player",
+          "role": "Viewer"
+        },
+        {
+          "ext": ["mp3", "wav", "flac", "ogg", "m4a", "aac", "wma"],
+          "name": "Audio File",
+          "description": "Play with Vortex Player",
+          "role": "Viewer"
+        },
+        {
+          "ext": ["pdf"],
+          "name": "PDF Document",
+          "description": "Open with Vortex PDF Reader",
+          "role": "Viewer"
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,

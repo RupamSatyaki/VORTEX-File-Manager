@@ -31,14 +31,30 @@ function buildLayout() {
 /* ── Init ── */
 async function init() {
   const { filePath, playlist, playlistIdx } = getParams();
-  if (!filePath) { document.body.innerHTML = '<div style="color:#ef4444;padding:40px;font-family:sans-serif">No file path provided</div>'; return; }
-
-  /* Get media server port */
-  try {
-    State.mediaPort = await window.vortexAPI.getMediaPort();
-  } catch (err) {
-    console.error('Failed to get media port:', err);
+  if (!filePath) {
+    document.body.innerHTML = '<div style="color:#ef4444;padding:40px;font-family:sans-serif">No file path provided</div>';
+    return;
   }
+
+  /* Get media server port — retry up to 5 times if not ready yet */
+  let port = null;
+  for (let i = 0; i < 5; i++) {
+    try {
+      port = await window.vortexAPI.getMediaPort();
+      if (port) break;
+    } catch (err) {
+      console.warn('getMediaPort attempt', i + 1, 'failed:', err.message);
+    }
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  if (!port) {
+    console.error('Failed to get media port after retries');
+    document.body.innerHTML = '<div style="color:#ef4444;padding:40px;font-family:sans-serif">Media server not available. Please restart Vortex.</div>';
+    return;
+  }
+
+  State.mediaPort = port;
 
   /* Set playlist */
   State.playlist    = playlist.length ? playlist : [{ path: filePath, name: filePath.split(/[/\\]/).pop() }];

@@ -43,6 +43,9 @@ const IPC = {
       /* Recycle Bin */
       'recyclebin:restore':    (p)    => window.vortexAPI.recycleBinRestore(p),
       'recyclebin:empty':      ()     => window.vortexAPI.recycleBinEmpty(),
+      /* Default App Settings */
+      'settings:getDefaultApps': ()   => window.vortexAPI.getDefaultApps(),
+      'settings:setDefaultApps': (s)  => window.vortexAPI.setDefaultApps(s),
     };
     const fn = map[channel];
     if (fn) return fn(...args);

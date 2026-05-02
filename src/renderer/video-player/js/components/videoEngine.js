@@ -42,28 +42,56 @@ const VideoEngine = {
 
     overlay.addEventListener('click', () => this.togglePlay());
 
-    this._el.addEventListener('play',  () => { overlay.classList.add('hidden'); State.paused = false; Controls.syncPlayBtn(false); });
-    this._el.addEventListener('pause', () => { overlay.classList.remove('hidden'); State.paused = true; Controls.syncPlayBtn(true); });
-    this._el.addEventListener('ended', () => {
-      this._el.currentTime = 0;
+    this._el.addEventListener('play',  () => {
+      overlay.classList.add('hidden');
+      State.paused = false;
+      Controls.syncPlayBtn(false);
+    });
+
+    this._el.addEventListener('pause', () => {
       overlay.classList.remove('hidden');
       State.paused = true;
       Controls.syncPlayBtn(true);
-      SeekBar.update(0, State.duration);
     });
 
-    this._el.addEventListener('waiting', () => { if (!this._el.paused) buffering.classList.remove('hidden'); });
-    this._el.addEventListener('playing', () => buffering.classList.add('hidden'));
-    this._el.addEventListener('canplay', () => buffering.classList.add('hidden'));
+    this._el.addEventListener('ended', () => {
+      overlay.classList.remove('hidden');
+      State.paused = true;
+      Controls.syncPlayBtn(true);
+      /* Don't reset currentTime here — let user replay manually */
+      SeekBar.update(State.duration, State.duration);
+    });
+
+    /* Stall detection — if video stalls for >5s, show buffering */
+    let _stallTimer = null;
+    this._el.addEventListener('waiting', () => {
+      if (!this._el.paused) {
+        _stallTimer = setTimeout(() => buffering.classList.remove('hidden'), 300);
+      }
+    });
+    this._el.addEventListener('playing', () => {
+      clearTimeout(_stallTimer);
+      buffering.classList.add('hidden');
+    });
+    this._el.addEventListener('canplay', () => {
+      clearTimeout(_stallTimer);
+      buffering.classList.add('hidden');
+    });
+
+    /* Error handler — log and show message */
+    this._el.addEventListener('error', (e) => {
+      const err = this._el?.error;
+      console.error('Video error:', err?.code, err?.message);
+      /* Don't stop — browser may recover on next range request */
+    });
 
     this._el.addEventListener('loadedmetadata', () => {
       /* For non-transcode files use video duration */
-      if (!State.isTranscode && this._el.duration > 0) {
+      if (!State.isTranscode && this._el.duration > 0 && isFinite(this._el.duration)) {
         State.duration = this._el.duration;
         SeekBar.setDuration(State.duration);
         InfoPanel.updateDuration(State.duration, this._el.videoWidth, this._el.videoHeight);
       } else if (State.isTranscode && State.duration > 0) {
-        /* Already set from ffprobe — just update resolution */
         InfoPanel.updateResolution(this._el.videoWidth, this._el.videoHeight);
       }
       document.getElementById('vp-transcode-overlay')?.classList.add('hidden');
@@ -72,8 +100,8 @@ const VideoEngine = {
     this._el.addEventListener('timeupdate', () => {
       if (!this._el) return;
       State.currentTime = this._el.currentTime;
-      const dur = State.isTranscode ? State.duration : (this._el.duration || State.duration);
-      SeekBar.update(State.currentTime, dur);
+      const dur = State.isTranscode ? State.duration : (isFinite(this._el.duration) ? this._el.duration : State.duration);
+      SeekBar.update(State.currentTime, dur || 0);
     });
 
     this._el.addEventListener('volumechange', () => {
@@ -94,6 +122,12 @@ const VideoEngine = {
       document.getElementById('vp-transcode-overlay')?.classList.remove('hidden');
     }
 
+    /* Guard: media port must be set */
+    if (!State.mediaPort) {
+      console.error('VideoEngine.loadFile: mediaPort not set');
+      return;
+    }
+
     /* Get ffprobe duration for transcode files */
     if (State.isTranscode) {
       window.vortexAPI.getMediaDuration(filePath).then(dur => {
@@ -102,11 +136,13 @@ const VideoEngine = {
           SeekBar.setDuration(dur);
           InfoPanel.updateDuration(dur, 0, 0);
         }
-      });
+      }).catch(() => {});
     }
 
-    /* Set src with retry for transcode */
+    /* Build URL */
     const url = MediaUrl.build(filePath);
+
+    /* For transcode files: wait until server has data, then set src */
     if (State.isTranscode) {
       await this._setSrcWithRetry(url);
     } else {
@@ -117,17 +153,26 @@ const VideoEngine = {
     if (State.isTranscode) TranscodeStatus.startPolling(filePath);
   },
 
-  async _setSrcWithRetry(url, maxRetries = 30) {
+  async _setSrcWithRetry(url, maxRetries = 40) {
     for (let i = 0; i < maxRetries; i++) {
       try {
         const res = await fetch(url, { method: 'HEAD' });
-        if (res.status !== 503) break;
-        await new Promise(r => setTimeout(r, 2000));
+        if (res.status === 200 || res.status === 206) break;
+        if (res.status === 503) {
+          /* Not ready yet — wait and retry */
+          await new Promise(r => setTimeout(r, 1000));
+          continue;
+        }
+        /* Any other status — just try to play */
+        break;
       } catch {
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 500));
       }
     }
-    if (this._el) { this._el.src = url; }
+    if (this._el) {
+      this._el.src = url;
+      /* Don't autoplay — let user press play */
+    }
   },
 
   togglePlay() {
@@ -177,7 +222,10 @@ const VideoEngine = {
       this._el.pause();
       this._el.removeAttribute('src');
       this._el.load();
+      /* Remove element from DOM to kill all event listeners */
+      this._el.replaceWith(this._el.cloneNode(false));
     }
     this._el = null;
+    TranscodeStatus.stopPolling();
   },
 };

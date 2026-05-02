@@ -10,7 +10,7 @@ const fs                                = require('fs');
 const path                              = require('path');
 const { fixFaststart, cleanupTemp }     = require('./mp4Faststart');
 const { getJob, needsTranscode,
-        cleanupAll, killJob }           = require('./mkvTranscoder');
+        cleanupAll, killJob, _jobs }    = require('./mkvTranscoder');
 
 const MIME = {
   mp4:  'video/mp4',
@@ -64,14 +64,13 @@ function getPort() { return _port; }
 /* ── Get transcode progress for a file (0-100) ── */
 function getProgress(filePath) {
   if (!needsTranscode(filePath)) return 100;
-  const { _jobs } = require('./mkvTranscoder');
   const job = _jobs.get(filePath);
   if (!job) return 0;
   if (job.done) return 100;
   if (job.duration > 0) {
     return Math.min(99, Math.round((job.transcodedSeconds / job.duration) * 100));
   }
-  return Math.round(job.progress);
+  return Math.round(job.progress || 0);
 }
 
 /* ── Get transcode info: transcodedSecs + duration ── */
@@ -79,39 +78,48 @@ function getTranscodeInfo(filePath) {
   if (!needsTranscode(filePath)) {
     return { transcodedSecs: Infinity, duration: 0, done: true };
   }
-  const { _jobs } = require('./mkvTranscoder');
+  /* Use the already-imported _jobs directly — avoids stale require */
   const job = _jobs.get(filePath);
-  if (!job) return { transcodedSecs: 0, duration: 0, done: false };
+  if (!job) {
+    /* Job not started yet — kick it off now so polling can begin */
+    getJob(filePath);
+    return { transcodedSecs: 0, duration: 0, done: false };
+  }
   return {
-    transcodedSecs: job.done ? Infinity : job.transcodedSeconds,
-    duration:       job.duration,
+    transcodedSecs: job.done ? Infinity : (job.transcodedSeconds || 0),
+    duration:       job.duration || 0,
     done:           job.done,
+    error:          job.error || null,
   };
 }
 
-/* ── MP4 faststart fix (cached) ── */
+/* ── MP4 faststart fix (cached, background) ──
+   Serves original file immediately, switches to faststart copy once ready.
+── */
 async function getFaststartPath(originalPath) {
   const ext = path.extname(originalPath).toLowerCase().slice(1);
   if (ext !== 'mp4' && ext !== 'm4v') return originalPath;
 
+  /* If already cached and done, return fixed path */
   if (_fixCache.has(originalPath)) {
     const entry = _fixCache.get(originalPath);
-    await entry.ready;
-    return entry.tmpPath || originalPath;
+    /* Return fixed path only if already complete — otherwise serve original */
+    return entry.done ? (entry.tmpPath || originalPath) : originalPath;
   }
 
-  let resolveFix;
-  const entry = { tmpPath: null, ready: new Promise(r => { resolveFix = r; }) };
+  /* Start background fix — don't await, serve original immediately */
+  const entry = { tmpPath: null, done: false };
   _fixCache.set(originalPath, entry);
 
-  try {
-    entry.tmpPath = await fixFaststart(originalPath);
-  } catch (err) {
-    console.warn('⚠️ Faststart failed:', err.message);
-  }
+  fixFaststart(originalPath).then(tmpPath => {
+    entry.tmpPath = tmpPath;
+    entry.done    = true;
+  }).catch(() => {
+    entry.done = true; /* mark done even on error so we stop retrying */
+  });
 
-  resolveFix();
-  return entry.tmpPath || originalPath;
+  /* Serve original file right away — no waiting */
+  return originalPath;
 }
 
 /* ── Request handler ── */
@@ -150,8 +158,8 @@ async function handleRequest(req, res) {
 async function handleTranscode(req, res, srcPath) {
   const job = getJob(srcPath);
 
-  /* Wait until 30 seconds of video is transcoded before starting playback */
-  await waitForDuration(job, 30, 120000);
+  /* Wait until at least 10 seconds of video is transcoded before starting playback */
+  await waitForDuration(job, 10, 60000);
 
   const ready = job.bytesReady();
   if (ready === 0 && !job.done) {
@@ -164,8 +172,9 @@ async function handleTranscode(req, res, srcPath) {
   const total   = job.done ? fs.statSync(tmpPath).size : null;
 
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Content-Type', 'video/mp4');
-  res.setHeader('X-Transcode-Progress', String(Math.round(job.progress)));
+  res.setHeader('Content-Type',  'video/mp4');
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Transcode-Progress', String(Math.round(job.progress || 0)));
 
   /* ── Range request ── */
   const rangeHeader = req.headers['range'];
@@ -175,16 +184,20 @@ async function handleTranscode(req, res, srcPath) {
 
     const available = job.bytesReady();
     const start     = parseInt(match[1], 10);
-    const end       = match[2]
-      ? Math.min(parseInt(match[2], 10), available - 1)
-      : available - 1;
 
+    /* If requested start is beyond what's available, wait for more data */
     if (start >= available) {
-      /* Wait for more data */
       await waitForBytes(job, start + 65536, 60000);
     }
 
-    const actualEnd   = Math.min(end, job.bytesReady() - 1);
+    const nowAvailable = job.bytesReady();
+    const end       = match[2]
+      ? Math.min(parseInt(match[2], 10), nowAvailable - 1)
+      : nowAvailable - 1;
+
+    if (start > end || end < 0) { res.writeHead(416); res.end(); return; }
+
+    const actualEnd   = Math.min(end, nowAvailable - 1);
     const chunkSize   = actualEnd - start + 1;
 
     if (chunkSize <= 0) { res.writeHead(416); res.end(); return; }
@@ -201,15 +214,21 @@ async function handleTranscode(req, res, srcPath) {
       start, end: actualEnd, highWaterMark: 2 * 1024 * 1024
     });
     stream.pipe(res);
-    stream.on('error', () => res.end());
+    stream.on('error', () => { if (!res.writableEnded) res.end(); });
     return;
   }
 
   /* ── Full / streaming response ── */
   if (job.done && total) {
-    res.writeHead(200, { 'Content-Length': total, 'Accept-Ranges': 'bytes' });
+    res.writeHead(200, {
+      'Content-Length': total,
+      'Accept-Ranges':  'bytes',
+    });
   } else {
-    res.writeHead(200, { 'Transfer-Encoding': 'chunked' });
+    res.writeHead(200, {
+      'Transfer-Encoding': 'chunked',
+      'Accept-Ranges':     'none',
+    });
   }
 
   if (req.method === 'HEAD') { res.end(); return; }
@@ -273,9 +292,13 @@ function waitForDuration(job, seconds, timeoutMs) {
     const deadline = Date.now() + timeoutMs;
     const check = () => {
       if (job.done || job.error) { resolve(); return; }
-      if (job.transcodedSeconds >= seconds) { resolve(); return; }
+      /* If file is shorter than requested wait, just wait for done or any bytes */
+      const target = (job.duration > 0 && job.duration < seconds) ? job.duration * 0.5 : seconds;
+      if (job.transcodedSeconds >= target) { resolve(); return; }
+      /* Also resolve if we have any bytes ready (allows partial playback) */
+      if (job.bytesReady() > 0 && job.transcodedSeconds >= 2) { resolve(); return; }
       if (Date.now() >= deadline) { resolve(); return; }
-      setTimeout(check, 500);
+      setTimeout(check, 300);
     };
     check();
   });
@@ -305,17 +328,31 @@ function serveFile(req, res, servePath, originalPath) {
   const ext   = path.extname(originalPath).toLowerCase().slice(1);
   const mime  = MIME[ext] || 'application/octet-stream';
 
+  /* Always set these — required for browser seek support */
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Accept-Ranges', 'bytes');
-  res.setHeader('Content-Type', mime);
+  res.setHeader('Accept-Ranges',  'bytes');
+  res.setHeader('Content-Type',   mime);
+  res.setHeader('Cache-Control',  'no-store');
 
   const rangeHeader = req.headers['range'];
   if (rangeHeader) {
     const match = rangeHeader.match(/bytes=(\d+)-(\d*)/);
-    if (!match) { res.writeHead(416, { 'Content-Range': `bytes */${total}` }); res.end(); return; }
+    if (!match) {
+      res.writeHead(416, { 'Content-Range': `bytes */${total}` });
+      res.end();
+      return;
+    }
 
     const start     = parseInt(match[1], 10);
-    const end       = match[2] ? parseInt(match[2], 10) : total - 1;
+    const end       = match[2] ? Math.min(parseInt(match[2], 10), total - 1) : total - 1;
+
+    /* Validate range */
+    if (start > end || start >= total) {
+      res.writeHead(416, { 'Content-Range': `bytes */${total}` });
+      res.end();
+      return;
+    }
+
     const chunkSize = end - start + 1;
 
     res.writeHead(206, {
@@ -326,16 +363,17 @@ function serveFile(req, res, servePath, originalPath) {
 
     const stream = fs.createReadStream(servePath, { start, end, highWaterMark: 2 * 1024 * 1024 });
     stream.pipe(res);
-    stream.on('error', () => res.end());
+    stream.on('error', () => { if (!res.writableEnded) res.end(); });
     return;
   }
 
+  /* Full file */
   res.writeHead(200, { 'Content-Length': total });
   if (req.method === 'HEAD') { res.end(); return; }
 
   const stream = fs.createReadStream(servePath, { highWaterMark: 2 * 1024 * 1024 });
   stream.pipe(res);
-  stream.on('error', () => res.end());
+  stream.on('error', () => { if (!res.writableEnded) res.end(); });
 }
 
 module.exports = { start, stop, getPort, getProgress, getTranscodeInfo };

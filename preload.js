@@ -65,4 +65,11 @@ contextBridge.exposeInMainWorld('vortexAPI', {
   // ── Recycle Bin ────────────────────────────────────────
   recycleBinRestore: (p)          => ipcRenderer.invoke('recyclebin:restore', p),
   recycleBinEmpty:   ()           => ipcRenderer.invoke('recyclebin:empty'),
+
+  // ── Default App Settings ───────────────────────────────
+  getDefaultApps:    ()           => ipcRenderer.invoke('settings:getDefaultApps'),
+  setDefaultApps:    (s)          => ipcRenderer.invoke('settings:setDefaultApps', s),
+
+  // ── File association navigation ────────────────────────
+  onNavigateToFile:  (cb)         => ipcRenderer.on('navigate:toFile', (e, p) => cb(p)),
 });

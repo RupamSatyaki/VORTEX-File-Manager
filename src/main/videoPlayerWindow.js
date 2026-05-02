@@ -69,4 +69,9 @@ function register(isDev) {
   }
 }
 
-module.exports = { register };
+/* ── Open directly from CLI / file association (no renderer involved) ── */
+function openDirect(filePath) {
+  createVideoPlayerWindow(filePath, [{ path: filePath, name: path.basename(filePath) }], 0);
+}
+
+module.exports = { register, openDirect };

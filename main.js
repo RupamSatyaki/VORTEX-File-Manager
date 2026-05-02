@@ -12,6 +12,68 @@ const isDev = process.argv.includes('--dev');
 let driveMonitorInterval = null;
 let lastDriveList = [];
 
+/* ── File type sets ── */
+const VIDEO_EXTS = new Set(['mp4','mkv','avi','mov','wmv','flv','m4v','ogv','webm','3gp']);
+const AUDIO_EXTS = new Set(['mp3','wav','flac','ogg','m4a','aac','wma']);
+const PDF_EXTS   = new Set(['pdf']);
+
+/* ── Extract a file path from argv (skip flags and the exe itself) ── */
+function getFileArgFromArgv(argv) {
+  /* argv[0] = electron/exe, argv[1] = main.js (in dev), rest = args */
+  const args = argv.slice(isDev ? 2 : 1);
+  for (const arg of args) {
+    if (arg.startsWith('--')) continue;          /* skip flags */
+    if (arg === '.')          continue;           /* skip cwd dot */
+    const ext = path.extname(arg).toLowerCase().slice(1);
+    if (ext && (VIDEO_EXTS.has(ext) || AUDIO_EXTS.has(ext) || PDF_EXTS.has(ext))) {
+      return arg;
+    }
+  }
+  return null;
+}
+
+/* ── Open the right window for a given file path ── */
+async function openFileByPath(filePath) {
+  if (!filePath) return;
+  const ext = path.extname(filePath).toLowerCase().slice(1);
+
+  if (VIDEO_EXTS.has(ext) || AUDIO_EXTS.has(ext)) {
+    /* Ensure media server is running */
+    if (!mediaServer.getPort()) await mediaServer.start();
+    videoPlayerWindow.openDirect(filePath);
+  } else if (PDF_EXTS.has(ext)) {
+    openPdfReaderDirect(filePath);
+  } else {
+    /* Unknown type — open main window and navigate to parent folder */
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
+      mainWindow.webContents.send('navigate:toFile', filePath);
+    }
+  }
+}
+
+/* ── Single instance lock — prevents multiple app instances ── */
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  /* Another instance is already running — quit this one */
+  app.quit();
+} else {
+  /* Handle second-instance launch (user double-clicked another file) */
+  app.on('second-instance', async (event, argv) => {
+    const filePath = getFileArgFromArgv(argv);
+    if (filePath) {
+      await openFileByPath(filePath);
+    } else {
+      /* No file arg — just focus the main window */
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
+      }
+    }
+  });
+}
+
 /* Software video decode — prevents GPU state errors during video playback
    Only disable video decode acceleration, not full GPU */
 app.commandLine.appendSwitch('disable-accelerated-video-decode');
@@ -153,6 +215,16 @@ app.whenReady().then(async () => {
   createWindow();
   registerIpcHandlers();
   videoPlayerWindow.register(isDev);
+
+  /* ── Handle file opened via OS file association ── */
+  const fileArg = getFileArgFromArgv(process.argv);
+  if (fileArg) {
+    /* Wait for main window to be ready before opening file */
+    mainWindow.webContents.once('did-finish-load', async () => {
+      /* Small delay so renderer modules finish initializing */
+      setTimeout(() => openFileByPath(fileArg), 500);
+    });
+  }
 });
 app.on('window-all-closed', () => {
   mediaServer.stop();
@@ -631,6 +703,64 @@ public class ShareHelper {
     const r = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] });
     return r.canceled ? null : r.filePaths[0];
   });
+
+  // ── Default App Settings ─────────────────────────────────
+  ipcMain.handle('settings:getDefaultApps', async () => {
+    try {
+      const f = path.join(app.getPath('userData'), 'storage', 'defaultApps.json');
+      if (!fs.existsSync(f)) return { video: 'vortex', audio: 'vortex', pdf: 'vortex' };
+      return JSON.parse(await fs.promises.readFile(f, 'utf8'));
+    } catch { return { video: 'vortex', audio: 'vortex', pdf: 'vortex' }; }
+  });
+
+  ipcMain.handle('settings:setDefaultApps', async (e, settings) => {
+    try {
+      const storageDir = path.join(app.getPath('userData'), 'storage');
+      if (!fs.existsSync(storageDir)) fs.mkdirSync(storageDir, { recursive: true });
+      await fs.promises.writeFile(
+        path.join(storageDir, 'defaultApps.json'),
+        JSON.stringify(settings, null, 2), 'utf8'
+      );
+      return { success: true };
+    } catch (err) { return { success: false, error: err.message }; }
+  });
+}
+
+/* ── Open PDF Reader directly (from CLI / file association) ── */
+function openPdfReaderDirect(filePath) {
+  const readerWin = new BrowserWindow({
+    width: 1200, height: 800,
+    minWidth: 800, minHeight: 600,
+    title: 'PDF Reader — Vortex',
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    autoHideMenuBar: true,
+    menuBarVisible: false,
+    webPreferences: {
+      preload:          path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration:  false,
+      sandbox:          false,
+    },
+  });
+  readerWin.setMenu(null);
+
+  ipcMain.once('pdf:minimize', () => readerWin.minimize());
+  ipcMain.once('pdf:maximize', () => readerWin.isMaximized() ? readerWin.unmaximize() : readerWin.maximize());
+  ipcMain.once('pdf:close',    () => readerWin.close());
+
+  readerWin.on('closed', () => {
+    ipcMain.removeAllListeners('pdf:minimize');
+    ipcMain.removeAllListeners('pdf:maximize');
+    ipcMain.removeAllListeners('pdf:close');
+  });
+
+  const encodedPath = encodeURIComponent(filePath);
+  readerWin.loadFile(
+    path.join(__dirname, 'src/renderer/pdf-reader/index.html'),
+    { query: { path: encodedPath } }
+  );
 }
 
 /* ── Read Windows Recycle Bin ── */

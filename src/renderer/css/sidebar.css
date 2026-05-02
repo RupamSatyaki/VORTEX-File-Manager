@@ -229,3 +229,23 @@
   z-index: 10;
 }
 .resize-handle:hover, .resize-handle.active { background: var(--accent); }
+
+/* Settings button at bottom of sidebar */
+.sidebar-settings-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  flex-shrink: 0;
+  user-select: none;
+}
+.sidebar-settings-btn:hover {
+  background: var(--bg-item-hover);
+  color: var(--text-primary);
+}
+.sidebar.collapsed .sidebar-settings-btn span { display: none; }

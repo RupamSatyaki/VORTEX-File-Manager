@@ -299,8 +299,41 @@ const FileList = {
       ContextMenu.showRecycleBinPanel(file);
       return;
     }
-    if (file.isDirectory) Navigation.navigateTo(file.path);
-    else IPC.invoke('shell:openPath', file.path);
+    if (file.isDirectory) {
+      Navigation.navigateTo(file.path);
+      return;
+    }
+
+    const ext = (file.ext || '').toLowerCase();
+
+    /* Check default app settings */
+    const defaultApps = Storage.get('defaultApps') || { video: 'vortex', audio: 'vortex', pdf: 'vortex' };
+
+    const VIDEO_EXTS = ['mp4','mkv','avi','mov','wmv','flv','m4v','ogv','webm','3gp'];
+    const AUDIO_EXTS = ['mp3','wav','flac','ogg','m4a','aac','wma'];
+    const PDF_EXTS   = ['pdf'];
+
+    if (VIDEO_EXTS.includes(ext) || AUDIO_EXTS.includes(ext)) {
+      if (defaultApps.video === 'vortex') {
+        /* Build playlist from current folder's video/audio files */
+        const allFiles = this._files;
+        const playlist = allFiles
+          .filter(f => !f.isDirectory && (VIDEO_EXTS.includes((f.ext||'').toLowerCase()) || AUDIO_EXTS.includes((f.ext||'').toLowerCase())))
+          .map(f => ({ path: f.path, name: f.name, ext: f.ext || '' }));
+        const idx = playlist.findIndex(p => p.path === file.path);
+        IPC.invoke('video:openPlayer', file.path, playlist, Math.max(0, idx));
+      } else {
+        IPC.invoke('shell:openPath', file.path);
+      }
+    } else if (PDF_EXTS.includes(ext)) {
+      if (defaultApps.pdf === 'vortex') {
+        IPC.invoke('pdf:openReader', file.path);
+      } else {
+        IPC.invoke('shell:openPath', file.path);
+      }
+    } else {
+      IPC.invoke('shell:openPath', file.path);
+    }
   },
 
   // ── Inline rename ──────────────────────────────────────────

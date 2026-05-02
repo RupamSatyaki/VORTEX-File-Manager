@@ -6,6 +6,41 @@ const Dialogs = {
     this._container = document.getElementById('dialogs-container');
   },
 
+  // ── Generic Confirm Dialog ───────────────────────────────
+  confirm(title, message) {
+    return new Promise((resolve) => {
+      const overlay = this._createOverlay();
+      const dialog = document.createElement('div');
+      dialog.className = 'dialog';
+      dialog.innerHTML = `
+        <div class="dialog-header">
+          <div class="dialog-title">${this._esc(title)}</div>
+          <button class="dialog-close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="dialog-body">
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.5">${this._esc(message)}</p>
+        </div>
+        <div class="dialog-footer">
+          <button class="dialog-button dialog-button-secondary" data-action="cancel">Cancel</button>
+          <button class="dialog-button dialog-button-primary" data-action="confirm">Confirm</button>
+        </div>
+      `;
+      overlay.appendChild(dialog);
+      this._container.appendChild(overlay);
+      const close = (val) => { overlay.remove(); resolve(val); };
+      dialog.querySelector('.dialog-close').addEventListener('click', () => close(false));
+      dialog.querySelector('[data-action="cancel"]').addEventListener('click', () => close(false));
+      dialog.querySelector('[data-action="confirm"]').addEventListener('click', () => close(true));
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+      document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape') { close(false); document.removeEventListener('keydown', escHandler); }
+      });
+      setTimeout(() => dialog.querySelector('[data-action="confirm"]').focus(), 100);
+    });
+  },
+
   // ── Delete Confirmation ──────────────────────────────────
   showDeleteConfirm(files, onConfirm, customTitle = null) {
     const count = files.length;

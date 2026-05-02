@@ -38,6 +38,15 @@ const App = {
     // Setup drive monitoring
     this.setupDriveMonitoring();
 
+    // Load default app settings from main process
+    await this.loadDefaultApps();
+
+    // Listen for file-association navigation from main process
+    this.setupFileAssociationHandler();
+
+    // Wire settings button now that DOM is ready
+    this._wireSettingsBtn();
+
     // Open This PC by default (special view)
     const savedTabs = Storage.get('tabs');
     if (savedTabs && savedTabs.length > 0) {
@@ -46,6 +55,38 @@ const App = {
       // Open with "This PC" view
       TabManager.createTab('thispc://');
     }
+  },
+
+  async loadDefaultApps() {
+    try {
+      const defaults = await window.vortexAPI.getDefaultApps();
+      Storage.set('defaultApps', defaults);
+    } catch (e) {
+      /* fallback — use vortex for everything */
+      Storage.set('defaultApps', { video: 'vortex', audio: 'vortex', pdf: 'vortex' });
+    }
+  },
+
+  setupFileAssociationHandler() {
+    if (typeof window.vortexAPI?.onNavigateToFile !== 'function') return;
+    window.vortexAPI.onNavigateToFile((filePath) => {
+      /* Navigate to parent folder and select the file */
+      const parentPath = filePath.substring(0, Math.max(filePath.lastIndexOf('\\'), filePath.lastIndexOf('/')) );
+      if (parentPath) {
+        Navigation.navigateTo(parentPath);
+        /* After navigation, select the file */
+        Events.once('navigation:pathChanged', () => {
+          setTimeout(() => {
+            const el = document.querySelector(`[data-path="${CSS.escape(filePath)}"]`);
+            if (el) {
+              const file = FileList.getFiles().find(f => f.path === filePath);
+              if (file) Selection.selectOnly(el, file);
+              el.scrollIntoView({ block: 'center' });
+            }
+          }, 300);
+        });
+      }
+    });
   },
   
   setupDriveMonitoring() {
@@ -98,6 +139,14 @@ const App = {
   applyTheme() {
     document.documentElement.setAttribute('data-theme', this.state.theme);
     document.documentElement.setAttribute('data-accent', this.state.accentColor);
+  },
+
+  _wireSettingsBtn() {
+    const btn = document.getElementById('sidebar-settings-btn');
+    if (btn && !btn._wired) {
+      btn._wired = true;
+      btn.addEventListener('click', () => SettingsDialog.show());
+    }
   },
 
   setView(view) {
