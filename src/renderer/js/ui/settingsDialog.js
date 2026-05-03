@@ -132,8 +132,13 @@ const SettingsDialog = {
 
               <div class="settings-info-box" style="margin-top:20px">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span>To make Vortex the system-wide default (for files opened outside Vortex), go to <strong>Windows Settings → Apps → Default Apps</strong> and set Vortex for each file type.</span>
+                <span>To make Vortex the system-wide default for files opened from any explorer, click the button below.</span>
               </div>
+
+              <button class="dialog-button dialog-button-primary" id="settings-set-default" style="margin-top:12px;width:100%;justify-content:center;display:flex;align-items:center;gap:8px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                Set Vortex as Default in Windows Settings
+              </button>
             </div>
 
           </div><!-- /settings-content -->
@@ -182,6 +187,12 @@ const SettingsDialog = {
           btn.classList.add('active');
         });
       });
+    });
+
+    /* ── Set as Default button ── */
+    overlay.querySelector('#settings-set-default')?.addEventListener('click', () => {
+      /* Open Windows Default Apps settings — deep link to Vortex entry */
+      window.vortexAPI?.openExternal('ms-settings:defaultapps');
     });
 
     /* ── Close ── */

@@ -63,12 +63,16 @@ if (!gotLock) {
   app.on('second-instance', async (event, argv) => {
     const filePath = getFileArgFromArgv(argv);
     if (filePath) {
+      /* Ensure media server is running (may have been started without it) */
+      if (!mediaServer.getPort()) await mediaServer.start();
       await openFileByPath(filePath);
     } else {
-      /* No file arg — just focus the main window */
+      /* No file arg — focus main window if open, else open it */
       if (mainWindow && !mainWindow.isDestroyed()) {
         if (mainWindow.isMinimized()) mainWindow.restore();
         mainWindow.focus();
+      } else {
+        createWindow();
       }
     }
   });
@@ -212,25 +216,35 @@ app.whenReady().then(async () => {
     }
   });
 
-  createWindow();
-  registerIpcHandlers();
-  videoPlayerWindow.register(isDev);
-
-  /* ── Handle file opened via OS file association ── */
+  /* ── Check if launched with a file argument ── */
   const fileArg = getFileArgFromArgv(process.argv);
+
   if (fileArg) {
-    /* Wait for main window to be ready before opening file */
-    mainWindow.webContents.once('did-finish-load', async () => {
-      /* Small delay so renderer modules finish initializing */
-      setTimeout(() => openFileByPath(fileArg), 500);
-    });
+    /* Launched by OS file association — open only the relevant window,
+       NOT the main file manager window */
+    videoPlayerWindow.register(isDev);
+    registerIpcHandlers();
+    await openFileByPath(fileArg);
+
+    /* If no windows were created (unknown ext), fall back to main window */
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  } else {
+    /* Normal launch — open main file manager */
+    createWindow();
+    registerIpcHandlers();
+    videoPlayerWindow.register(isDev);
   }
 });
 app.on('window-all-closed', () => {
   mediaServer.stop();
   if (process.platform !== 'darwin') app.quit();
 });
-app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+app.on('activate', () => {
+  /* On macOS re-open main window */
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+});
 
 function registerIpcHandlers() {
   // ── Window ──────────────────────────────────────────────

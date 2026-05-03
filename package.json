@@ -55,22 +55,43 @@
           ]
         }
       ],
-      "icon": "src/assets/icons/app-icon.png",
+      "icon": "src/assets/icons/app-icon.ico",
       "fileAssociations": [
         {
-          "ext": ["mp4", "mkv", "avi", "mov", "wmv", "webm", "m4v", "flv", "ogv", "3gp"],
+          "ext": [
+            "mp4",
+            "mkv",
+            "avi",
+            "mov",
+            "wmv",
+            "webm",
+            "m4v",
+            "flv",
+            "ogv",
+            "3gp"
+          ],
           "name": "Video File",
           "description": "Play with Vortex Player",
           "role": "Viewer"
         },
         {
-          "ext": ["mp3", "wav", "flac", "ogg", "m4a", "aac", "wma"],
+          "ext": [
+            "mp3",
+            "wav",
+            "flac",
+            "ogg",
+            "m4a",
+            "aac",
+            "wma"
+          ],
           "name": "Audio File",
           "description": "Play with Vortex Player",
           "role": "Viewer"
         },
         {
-          "ext": ["pdf"],
+          "ext": [
+            "pdf"
+          ],
           "name": "PDF Document",
           "description": "Open with Vortex PDF Reader",
           "role": "Viewer"
@@ -79,10 +100,17 @@
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Vortex File Manager"
+      "menuCategory": "Vortex",
+      "shortcutName": "Vortex File Manager",
+      "installerIcon": "src/assets/icons/app-icon.ico",
+      "uninstallerIcon": "src/assets/icons/app-icon.ico",
+      "warningsAsErrors": false,
+      "include": "installer.nsh"
     },
     "mac": {
       "target": "dmg",
