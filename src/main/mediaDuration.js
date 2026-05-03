@@ -8,10 +8,14 @@ const ffmpegInstaller  = require('@ffmpeg-installer/ffmpeg');
 const ffprobeInstaller = require('@ffprobe-installer/ffprobe');
 const path             = require('path');
 
-ffmpeg.setFfmpegPath(ffmpegInstaller.path);
-ffmpeg.setFfprobePath(ffprobeInstaller.path);
+/* ── Resolve binary paths — works in dev and packed .asar ── */
+function resolveBinaryPath(p) {
+  return p.replace('app.asar', 'app.asar.unpacked');
+}
 
-console.log('📏 ffprobe path:', ffprobeInstaller.path);
+ffmpeg.setFfmpegPath(resolveBinaryPath(ffmpegInstaller.path));
+ffmpeg.setFfprobePath(resolveBinaryPath(ffprobeInstaller.path));
+console.log('📏 ffprobe path:', resolveBinaryPath(ffprobeInstaller.path));
 
 /* Cache: filePath → durationSeconds */
 const _cache = new Map();

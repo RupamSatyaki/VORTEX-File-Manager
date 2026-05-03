@@ -13,7 +13,15 @@ const os                              = require('os');
 const { EventEmitter }                = require('events');
 const { detectEncoder, getEncoderOptions } = require('./gpuDetect');
 
-ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+/* ── Resolve ffmpeg path — works both in dev and packed .asar ── */
+function resolveBinaryPath(installerPath) {
+  /* In packed app, binaries are in app.asar.unpacked, not app.asar */
+  return installerPath.replace('app.asar', 'app.asar.unpacked');
+}
+
+const ffmpegPath = resolveBinaryPath(ffmpegInstaller.path);
+ffmpeg.setFfmpegPath(ffmpegPath);
+console.log('🎬 ffmpeg path:', ffmpegPath);
 
 /* Formats that need transcoding */
 const NEEDS_TRANSCODE = new Set([

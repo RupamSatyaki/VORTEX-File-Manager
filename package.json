@@ -44,7 +44,15 @@
       "main.js",
       "preload.js",
       "src/**/*",
-      "package.json"
+      "package.json",
+      "node_modules/**/*",
+      "!node_modules/.cache/**/*",
+      "!node_modules/.bin/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/@ffmpeg-installer/**/*",
+      "node_modules/@ffprobe-installer/**/*",
+      "node_modules/fluent-ffmpeg/**/*"
     ],
     "win": {
       "target": [

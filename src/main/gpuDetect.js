@@ -8,7 +8,12 @@ const ffmpeg          = require('fluent-ffmpeg');
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
 const os              = require('os');
 
-ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+/* ── Resolve binary path — works in dev and packed .asar ── */
+function resolveBinaryPath(p) {
+  return p.replace('app.asar', 'app.asar.unpacked');
+}
+
+ffmpeg.setFfmpegPath(resolveBinaryPath(ffmpegInstaller.path));
 
 let _cachedEncoder = null; /* cache result */
 
