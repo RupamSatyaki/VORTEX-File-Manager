@@ -2,6 +2,9 @@
 
 <div align="center">
 
+
+
+
 ![Vortex File Manager](src/assets/icons/app-icon.png)
 
 **A modern, fast Windows file manager with built-in video player and PDF reader.**
